@@ -4,10 +4,12 @@ part 'service.g.dart';
 
 @JsonSerializable()
 class Service {
-  int? id;
-  String? ServiceName;
+  @JsonKey(name: 'ServiceId')
+  int? serviceId;
 
-  Service(this.id, this.ServiceName);
+  @JsonKey(name: 'ServiceName')
+  String? serviceName;
+  Service(this.serviceId, this.serviceName);
 
   factory Service.fromJson(Map<String, dynamic> json) =>
       _$ServiceFromJson(json);

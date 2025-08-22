@@ -33,8 +33,9 @@ namespace eHairdressers.Services.Database
 
         public bool? Status { get; set; }
         public virtual ICollection<UserRole> UserRoles { get; } = new List<UserRole>();
-        public virtual ICollection<Cart> Cart { get; } = new List<Cart>();
+
 
         public virtual ICollection<Appointment> Appointments { get; } = new List<Appointment>();
+    
     }
 }

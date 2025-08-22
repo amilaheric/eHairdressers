@@ -13,5 +13,9 @@ namespace eHairdressers.Services
     {
         Task<List<Model.Appointment>> GetAppointmentsByUserIdAsync(int userId);
         Task<List<TimeSpan>> GetAvailableTimes(DateTime date);
+        Task<List<Model.Employees>> GetAvailableEmployees();
+        Task<List<Model.User>> GetAvailableUsers();
+        Task<List<Model.Service>> GetAvailableServices();
+        Task<List<Model.Appointment>> GetCompletedAppointmentsForReviewAsync(int userId);
     }
 }

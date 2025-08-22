@@ -2,7 +2,8 @@
 using eHairdressers.Model.Requests;
 using eHairdressers.Model.SearchObjects;
 using eHairdressers.Services.Database;
-using eHairdressers.Services.ProductsStateMachine;
+using eHairdressers.Model.Messages;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
@@ -15,8 +16,11 @@ namespace eHairdressers.Services
 {
     public class AppointmentService : BaseCRUDService<Model.Appointment,Database.Appointment,AppointmentsSearchObject,AppointmentInsertRequest, AppointmentUpdateRequest>,IAppointmentService
     {
-        public AppointmentService(eHairdressersContext context, IMapper mapper) : base(context, mapper)
+        private readonly IMessagingService _messagingService;
+
+        public AppointmentService(eHairdressersContext context, IMapper mapper, IMessagingService messagingService) : base(context, mapper)
         {
+            _messagingService = messagingService;
         }
 
         public async Task<List<Model.Appointment>> GetAppointmentsByUserIdAsync(int userId)
@@ -24,11 +28,40 @@ namespace eHairdressers.Services
             var entity = await _context.Appointments.Where(a => a.UserId == userId).ToListAsync();
             return _mapper.Map<List<Model.Appointment>>(entity);
         }
+
+        public override async Task BeforeInsert(Database.Appointment entity, AppointmentInsertRequest insert)
+        {
+           
+
+          
+            var employeeExists = await _context.Employees.AnyAsync(e => e.EmployeeId == insert.EmployeeId);
+            if (!employeeExists)
+            {
+                throw new InvalidOperationException($"Employee with ID {insert.EmployeeId} does not exist. Please provide a valid Employee ID.");
+            }
+
+    
+            var userExists = await _context.User.AnyAsync(u => u.UserId == insert.UserId);
+            if (!userExists)
+            {
+                throw new InvalidOperationException($"User with ID {insert.UserId} does not exist. Please provide a valid User ID.");
+            }
+
+    
+            var serviceExists = await _context.Services.AnyAsync(s => s.ServiceId == insert.ServiceId);
+            if (!serviceExists)
+            {
+                throw new InvalidOperationException($"Service with ID {insert.ServiceId} does not exist. Please provide a valid Service ID.");
+            }
+
+            entity.Approved = false;
+        }
+
         public override IQueryable<Appointment> AddInclude(IQueryable<Appointment> query, AppointmentsSearchObject? search = null)
         {
             query = query.Include(a => a.Employee)
-                 .Include(a => a.Service)
-                 .Include(a => a.User);
+               .Include(a => a.Service)
+               .Include(a => a.User);
 
             return base.AddInclude(query, search);
         }
@@ -53,7 +86,9 @@ namespace eHairdressers.Services
         public async Task<List<TimeSpan>> GetAvailableTimes(DateTime date)
         {
             var appointmentsForDate = await _context.Appointments
-                .Where(a => a.AppointmentDate.Date == date.Date)
+                 .Where(a => a.AppointmentDate.Date == date.Date)
+              
+
                 .ToListAsync();
 
             var bookedTimes = appointmentsForDate.Select(a => a.AppointmentTime).ToList();
@@ -77,5 +112,91 @@ namespace eHairdressers.Services
             return availableTimes;
         }
 
+
+        public async Task<List<Model.Employees>> GetAvailableEmployees()
+        {
+            var employees = await _context.Employees.ToListAsync();
+            return _mapper.Map<List<Model.Employees>>(employees);
+        }
+
+        public async Task<List<Model.User>> GetAvailableUsers()
+        {
+            var users = await _context.User.ToListAsync();
+            return _mapper.Map<List<Model.User>>(users);
+        }
+
+        public async Task<List<Model.Service>> GetAvailableServices()
+        {
+            var services = await _context.Services.ToListAsync();
+            return _mapper.Map<List<Model.Service>>(services);
+        }
+
+        public async Task<List<Model.Appointment>> GetCompletedAppointmentsForReviewAsync(int userId)
+        {
+            var today = DateTime.Today;
+            
+           
+            var completedAppointments = await _context.Appointments
+                .Include(a => a.Employee)
+                .Include(a => a.Service)
+                .Include(a => a.User)
+                .Where(a => a.UserId == userId && a.AppointmentDate < today)
+                .ToListAsync();
+
+            var appointmentsWithoutReviews = new List<Database.Appointment>();
+            
+            foreach (var appointment in completedAppointments)
+            {
+                var hasReview = await _context.Reviews
+                    .AnyAsync(r => r.AppointmentId == appointment.AppointmentId && r.UserId == userId);
+                
+                if (!hasReview)
+                {
+                    appointmentsWithoutReviews.Add(appointment);
+                }
+            }
+
+            return _mapper.Map<List<Model.Appointment>>(appointmentsWithoutReviews);
+        }
+
+        public override async Task AfterInsert(Database.Appointment entity, AppointmentInsertRequest insert)
+        {
+             await SendAppointmentCreatedMessageAsync(entity);
+           
+        }
+
+        private async Task SendAppointmentCreatedMessageAsync(Database.Appointment appointment)
+        {
+            try
+            {
+         
+                var user = await _context.User.FindAsync(appointment.UserId);
+                var employee = await _context.Employees.FindAsync(appointment.EmployeeId);
+                var service = await _context.Services.FindAsync(appointment.ServiceId);
+
+                var message = new AppointmentCreatedMessage
+                {
+                    AppointmentId = appointment.AppointmentId,
+                    UserId = appointment.UserId,
+                    UserName = user?.Name + " " + user?.Surname,
+                    UserEmail = user?.Email,
+                    EmployeeId = appointment.EmployeeId,
+                    EmployeeName = employee?.Name + " " + employee?.Surname,
+                    ServiceId = appointment.ServiceId,
+                    ServiceName = service?.ServiceName,
+                    AppointmentDate = appointment.AppointmentDate,
+                    AppointmentTime = appointment.AppointmentTime,
+                    Comment = appointment.Comment,
+                    Approved = appointment.Approved
+                };
+
+                await _messagingService.PublishAppointmentCreatedAsync(message);
+            }
+            catch (Exception ex)
+            {
+               
+                Console.WriteLine($"Error sending appointment created message: {ex.Message}");
+            }
+        }
     }
 }

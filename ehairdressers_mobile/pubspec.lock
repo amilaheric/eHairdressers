@@ -384,6 +384,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.11.1"
+  message_pack_dart:
+    dependency: transitive
+    description:
+      name: message_pack_dart
+      sha256: "71b9f0ff60e5896e60b337960bb535380d7dba3297b457ac763ccae807385b59"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.1"
   meta:
     dependency: transitive
     description:
@@ -472,6 +480,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.1"
+  signalr_netcore:
+    dependency: "direct main"
+    description:
+      name: signalr_netcore
+      sha256: f0726f7dea94ca7e08ee21366e9caf21350c9f7f48939994c51307eae16a678c
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.3"
   sky_engine:
     dependency: transitive
     description: flutter
@@ -501,6 +517,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.10.0"
+  sprintf:
+    dependency: transitive
+    description:
+      name: sprintf
+      sha256: "1fc9ffe69d4df602376b52949af107d8f5703b77cda567c4d7d86a0693120f23"
+      url: "https://pub.dev"
+    source: hosted
+    version: "7.0.0"
+  sse:
+    dependency: transitive
+    description:
+      name: sse
+      sha256: fcc97470240bb37377f298e2bd816f09fd7216c07928641c0560719f50603643
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.1.8"
+  sse_channel:
+    dependency: transitive
+    description:
+      name: sse_channel
+      sha256: "9aad5d4eef63faf6ecdefb636c0f857bd6f74146d2196087dcf4b17ab5b49b1b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.1"
   stack_trace:
     dependency: transitive
     description:
@@ -557,6 +597,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.2"
+  tuple:
+    dependency: transitive
+    description:
+      name: tuple
+      sha256: a97ce2013f240b2f3807bcbaf218765b6f301c3eff91092bcfa23a039e7dd151
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.2"
   typed_data:
     dependency: transitive
     description:
@@ -565,6 +613,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
+  uuid:
+    dependency: transitive
+    description:
+      name: uuid
+      sha256: a5be9ef6618a7ac1e964353ef476418026db906c4facdedaa299b7a2e71690ff
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.5.1"
   vector_math:
     dependency: transitive
     description:

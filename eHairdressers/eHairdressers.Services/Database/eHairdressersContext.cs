@@ -15,6 +15,13 @@ namespace eHairdressers.Services.Database
         {
         }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+
+        }
+
         public DbSet<Products> Products { get; set; }
         public DbSet<Category> Category { get; set; }
         public DbSet<Brand> Brand { get; set; }
@@ -23,13 +30,21 @@ namespace eHairdressers.Services.Database
         public DbSet<UserRole> UserRole { get; set; }
         public DbSet<Orders> Orders { get; set; }
         public DbSet<OrderItems> OrderItems { get; set; }
-        public DbSet<Cart> Cart { get; set; }
-        public DbSet<CartItems> CartItems { get; set; }
-        public DbSet<Customers> Customers { get; set; }
-        public DbSet<Availability> Availability { get; set; }
+
+   
+
         public DbSet<Appointment> Appointments { get; set; }
+        public DbSet<Employees> Employees { get; set; }
         public DbSet<Reviews> Reviews { get; set; }
+        public DbSet<Payment> Payments { get; set; }
         public DbSet<Service> Services { get; set; }
+        
+        // Chat entities
+        public DbSet<ChatRoom> ChatRooms { get; set; }
+        public DbSet<Message> Messages { get; set; }
+        public DbSet<ChatRoomUser> ChatRoomUsers { get; set; }
+        
+
 
 
 

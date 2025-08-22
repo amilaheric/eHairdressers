@@ -12,6 +12,7 @@ import 'package:ehairdressers_mobile/widgets/master_screen.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
 import 'package:provider/provider.dart';
 
 class ProductInsert extends StatefulWidget {
@@ -24,40 +25,43 @@ class ProductInsert extends StatefulWidget {
 class _ProductInsertState extends State<ProductInsert> {
   File? selectedImage;
   String? _base64Image;
-
-  String defaultImagePath = '.dart_tool/assets/default.jpg';
+  bool isLoading = true;
   final _formKey = GlobalKey<FormBuilderState>();
-  Map<String, dynamic> _initialValue = {};
+  late ProductProvider _productProvider;
   late BrandProvider _brandProvider;
   late ProductCategoryProvider _categoryProvider;
-  late ProductProvider _productProvider;
   SearchResult<Brand>? brandResult;
   SearchResult<ProductCategory>? categoryResult;
+  String defaultImagePath = '.dart_tool/assets/default.jpg';
 
-  bool isLoading = true;
   @override
   void initState() {
     super.initState();
-    _initialValue = {};
-
-    _productProvider = context.read<ProductProvider>();
-    _brandProvider = context.read<BrandProvider>();
-    _categoryProvider = context.read<ProductCategoryProvider>();
-    initForm();
+  
   }
 
   @override
-  didChangeDependencies() {
+  void didChangeDependencies() {
     super.didChangeDependencies();
+    
+    try {
+      _productProvider = context.read<ProductProvider>();
+      _brandProvider = context.read<BrandProvider>();
+      _categoryProvider = context.read<ProductCategoryProvider>();
+      
+      if (_brandProvider != null && _categoryProvider != null) {
+        initForm();
+      }
+    } catch (e) {
+
+    }
   }
 
   Future initForm() async {
-    brandResult = await _brandProvider.get();
-    categoryResult = await _categoryProvider.get();
-    if (brandResult?.result != null) {
-      for (var item in brandResult!.result!) {
-        print(item.id);
-      }
+    try {
+      brandResult = await _brandProvider.get();
+      categoryResult = await _categoryProvider.get();
+    } catch (e) { // Error in initForm
     }
 
     setState(() {
@@ -79,6 +83,16 @@ class _ProductInsertState extends State<ProductInsert> {
     }
   }
 
+  void _resetForm() {
+ 
+    _formKey.currentState?.reset();
+    
+    setState(() {
+      selectedImage = null;
+      _base64Image = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MasterScreenWidget(
@@ -94,15 +108,25 @@ class _ProductInsertState extends State<ProductInsert> {
                     child: ElevatedButton(
                       onPressed: () async {
                         _formKey.currentState?.saveAndValidate();
-                        print(_formKey.currentState?.value['name']);
                         var request =
                             new Map.from(_formKey.currentState!.value);
-                        request['image'] = _base64Image;
-                        _formKey.currentState?.reset();
-                        print(request);
+                        if (_base64Image != null) {
+                          request['image'] = _base64Image;
+                        }
+                        
                         try {
                           if (widget.product == null) {
                             await _productProvider.insert(request);
+                            
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Product uploaded successfully!'),
+                                backgroundColor: Colors.green,
+                                duration: Duration(seconds: 3),
+                              ),
+                            );
+                            
+                            _resetForm();
                           }
                         } on Exception catch (e) {
                           showDialog(
@@ -132,7 +156,7 @@ class _ProductInsertState extends State<ProductInsert> {
   FormBuilder _buildForm() {
     return FormBuilder(
       key: _formKey,
-      initialValue: _initialValue,
+      initialValue: {}, // Removed _initialValue
       child: Container(
         alignment: Alignment.center,
         padding: EdgeInsets.all(20),
@@ -160,21 +184,57 @@ class _ProductInsertState extends State<ProductInsert> {
                 FormBuilderTextField(
                   name: 'name',
                   decoration: InputDecoration(labelText: "Name"),
+                  validator: FormBuilderValidators.compose([
+                    FormBuilderValidators.required(errorText: 'Name is required'),
+                  ]),
                 ),
                 SizedBox(height: 10),
                 FormBuilderTextField(
                   name: 'code',
                   decoration: InputDecoration(labelText: "Code"),
+                  validator: FormBuilderValidators.compose([
+                    FormBuilderValidators.required(errorText: 'Code is required'),
+                  ]),
                 ),
                 SizedBox(height: 10),
                 FormBuilderTextField(
                   name: 'price',
                   decoration: InputDecoration(labelText: "Price"),
+                  keyboardType: TextInputType.number,
+                  validator: FormBuilderValidators.compose([
+                    FormBuilderValidators.required(errorText: 'Price is required'),
+                    FormBuilderValidators.numeric(errorText: 'Price must be a number'),
+                    (value) {
+                      if (value != null && double.tryParse(value) == null) {
+                        return 'Price must be a valid number';
+                      }
+                      return null;
+                    },
+                  ]),
                 ),
                 SizedBox(height: 10),
                 FormBuilderTextField(
                   name: 'description',
                   decoration: InputDecoration(labelText: "Description"),
+                  validator: FormBuilderValidators.compose([
+                    FormBuilderValidators.required(errorText: 'Description is required'),
+                  ]),
+                ),
+                SizedBox(height: 10),
+                FormBuilderTextField(
+                  name: 'amount',
+                  decoration: InputDecoration(labelText: "Amount"),
+                  keyboardType: TextInputType.number,
+                  validator: FormBuilderValidators.compose([
+                    FormBuilderValidators.required(errorText: 'Amount is required'),
+                    FormBuilderValidators.numeric(errorText: 'Amount must be a number'),
+                    (value) {
+                      if (value != null && int.tryParse(value) == null) {
+                        return 'Amount must be a valid integer';
+                      }
+                      return null;
+                    },
+                  ]),
                 ),
                 SizedBox(height: 10),
                 FormBuilderDropdown<String>(
@@ -183,14 +243,22 @@ class _ProductInsertState extends State<ProductInsert> {
                     labelText: 'Brand',
                     hintText: 'Select Brand',
                   ),
-                  items: brandResult?.result
-                          ?.map((item) => DropdownMenuItem(
-                                alignment: AlignmentDirectional.center,
-                                value: item.id.toString(),
-                                child: Text(item.name ?? ""),
-                              ))
-                          .toList() ??
-                      [],
+                  validator: FormBuilderValidators.compose([
+                    FormBuilderValidators.required(errorText: 'Brand is required'),
+                  ]),
+                  items: (() {
+                    var items = brandResult?.result
+                            ?.map((item) {
+                              return DropdownMenuItem(
+                                  alignment: AlignmentDirectional.center,
+                                  value: item.id?.toString() ?? "",
+                                  child: Text(item.name ?? ""),
+                                );
+                            })
+                            .toList() ??
+                        [];
+                    return items;
+                  })(),
                 ),
                 SizedBox(height: 10),
                 FormBuilderDropdown<String>(
@@ -199,14 +267,22 @@ class _ProductInsertState extends State<ProductInsert> {
                     labelText: 'Category',
                     hintText: 'Select Category',
                   ),
-                  items: categoryResult?.result
-                          ?.map((item) => DropdownMenuItem(
-                                alignment: AlignmentDirectional.center,
-                                value: item.id.toString(),
-                                child: Text(item.name ?? ""),
-                              ))
-                          .toList() ??
-                      [],
+                  validator: FormBuilderValidators.compose([
+                    FormBuilderValidators.required(errorText: 'Category is required'),
+                  ]),
+                  items: (() {
+                    var items = categoryResult?.result
+                            ?.map((item) {
+                               return DropdownMenuItem(
+                                  alignment: AlignmentDirectional.center,
+                                  value: item.id?.toString() ?? "",
+                                  child: Text(item.name ?? ""),
+                                );
+                            })
+                            .toList() ??
+                        [];
+                          return items;
+                  })(),
                 ),
               ],
             )),

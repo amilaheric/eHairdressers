@@ -4,8 +4,11 @@ part 'product_category.g.dart';
 
 @JsonSerializable()
 class ProductCategory {
+  @JsonKey(name: 'Id')
   int? id;
+  @JsonKey(name: 'Name')
   String? name;
+  @JsonKey(name: 'Description')
   String? description;
 
   ProductCategory(this.id, this.name, this.description);

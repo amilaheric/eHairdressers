@@ -12,9 +12,10 @@ class Product {
   int? brandId;
   int? categoryId;
   String? image;
+  int? amount;
 
   Product(this.id, this.name, this.description, this.price, this.code,
-      this.image, this.brandId, this.categoryId);
+      this.image, this.brandId, this.categoryId, this.amount);
 
   factory Product.fromJson(Map<String, dynamic> json) =>
       _$ProductFromJson(json);

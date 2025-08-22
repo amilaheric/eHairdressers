@@ -6,7 +6,6 @@ class AppointmentProvider extends BaseProvider<Appointment> {
 
   @override
   Appointment fromJson(data) {
-    // TODO: implement fromJson
     return Appointment.fromJson(data);
   }
 }

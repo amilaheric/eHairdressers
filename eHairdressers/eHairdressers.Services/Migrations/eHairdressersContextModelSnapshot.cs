@@ -36,11 +36,10 @@ namespace eHairdressers.Services.Migrations
                     b.Property<TimeSpan>("AppointmentTime")
                         .HasColumnType("Time");
 
-                    b.Property<bool>("Approved")
+                    b.Property<bool?>("Approved")
                         .HasColumnType("bit");
 
                     b.Property<string>("Comment")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("EmployeeId")
@@ -63,33 +62,6 @@ namespace eHairdressers.Services.Migrations
                     b.ToTable("Appointments");
                 });
 
-            modelBuilder.Entity("eHairdressers.Services.Database.Availability", b =>
-                {
-                    b.Property<int>("AvailabilityId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AvailabilityId"));
-
-                    b.Property<DateTime>("AppointmentDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("EndTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("StartTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("AvailabilityId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Availability");
-                });
-
             modelBuilder.Entity("eHairdressers.Services.Database.Brand", b =>
                 {
                     b.Property<int>("Id")
@@ -105,74 +77,6 @@ namespace eHairdressers.Services.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Brand");
-                });
-
-            modelBuilder.Entity("eHairdressers.Services.Database.Cart", b =>
-                {
-                    b.Property<int>("CartId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CartId"));
-
-                    b.Property<string>("AccountNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("OrderId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TotalWithVAT")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TotalWithoutVAT")
-                        .HasColumnType("int");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("CartId");
-
-                    b.HasIndex("OrderId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Cart");
-                });
-
-            modelBuilder.Entity("eHairdressers.Services.Database.CartItems", b =>
-                {
-                    b.Property<int>("CartItemsId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CartItemsId"));
-
-                    b.Property<int>("Amount")
-                        .HasColumnType("int");
-
-                    b.Property<int>("CartId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("Discount")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Price")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.HasKey("CartItemsId");
-
-                    b.HasIndex("CartId");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("CartItems");
                 });
 
             modelBuilder.Entity("eHairdressers.Services.Database.Category", b =>
@@ -196,47 +100,56 @@ namespace eHairdressers.Services.Migrations
                     b.ToTable("Category");
                 });
 
-            modelBuilder.Entity("eHairdressers.Services.Database.Customers", b =>
+            modelBuilder.Entity("eHairdressers.Services.Database.ChatRoom", b =>
                 {
-                    b.Property<int>("CustomerId")
+                    b.Property<int>("ChatRoomId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CustomerId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ChatRoomId"));
 
-                    b.Property<string>("Address")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
 
-                    b.Property<string>("BirthDate")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("CitizenshipNumber")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Email")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<byte[]>("Image")
-                        .HasColumnType("varbinary(max)");
-
-                    b.Property<byte[]>("ImageThumb")
-                        .HasColumnType("varbinary(max)");
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Phone")
-                        .HasColumnType("nvarchar(max)");
+                    b.HasKey("ChatRoomId");
 
-                    b.Property<string>("Surname")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.ToTable("ChatRooms");
+                });
 
-                    b.HasKey("CustomerId");
+            modelBuilder.Entity("eHairdressers.Services.Database.ChatRoomUser", b =>
+                {
+                    b.Property<int>("ChatRoomUserId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
 
-                    b.ToTable("Customers");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ChatRoomUserId"));
+
+                    b.Property<int>("ChatRoomId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("JoinedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ChatRoomUserId");
+
+                    b.HasIndex("ChatRoomId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ChatRoomUsers");
                 });
 
             modelBuilder.Entity("eHairdressers.Services.Database.Employees", b =>
@@ -274,21 +187,65 @@ namespace eHairdressers.Services.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("EmployeeId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Employees");
                 });
 
-            modelBuilder.Entity("eHairdressers.Services.Database.OrderItems", b =>
+            modelBuilder.Entity("eHairdressers.Services.Database.Message", b =>
                 {
-                    b.Property<int>("OrderItemsId")
+                    b.Property<int>("MessageId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrderItemsId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MessageId"));
+
+                    b.Property<int>("ChatRoomId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("SenderId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SenderType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("SentDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("MessageId");
+
+                    b.HasIndex("ChatRoomId");
+
+                    b.HasIndex("SenderId");
+
+                    b.ToTable("Messages");
+                });
+
+            modelBuilder.Entity("eHairdressers.Services.Database.OrderItems", b =>
+                {
+                    b.Property<int>("OrderItemId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrderItemId"));
 
                     b.Property<int>("OrderId")
                         .HasColumnType("int");
+
+                    b.Property<double>("Price")
+                        .HasColumnType("float");
 
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
@@ -296,7 +253,7 @@ namespace eHairdressers.Services.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
-                    b.HasKey("OrderItemsId");
+                    b.HasKey("OrderItemId");
 
                     b.HasIndex("OrderId");
 
@@ -313,12 +270,6 @@ namespace eHairdressers.Services.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OrderId"));
 
-                    b.Property<bool?>("Canceled")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("CustomerId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("OrderDate")
                         .HasColumnType("datetime2");
 
@@ -326,18 +277,52 @@ namespace eHairdressers.Services.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("PaymentId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<bool>("Status")
                         .HasColumnType("bit");
 
+                    b.Property<double>("TotalPrice")
+                        .HasColumnType("float");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("OrderId");
 
-                    b.HasIndex("CustomerId");
+                    b.HasIndex("UserId");
 
                     b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("eHairdressers.Services.Database.Payment", b =>
+                {
+                    b.Property<int>("PaymentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PaymentId"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("PaymentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PaymentStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("PaymentId");
+
+                    b.HasIndex("OrderId");
+
+                    b.ToTable("Payments");
                 });
 
             modelBuilder.Entity("eHairdressers.Services.Database.Products", b =>
@@ -347,9 +332,6 @@ namespace eHairdressers.Services.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("Amount")
-                        .HasColumnType("int");
 
                     b.Property<int>("BrandId")
                         .HasColumnType("int");
@@ -375,14 +357,8 @@ namespace eHairdressers.Services.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("PaymentId")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<double>("Price")
                         .HasColumnType("float");
-
-                    b.Property<string>("StateMachine")
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -578,7 +554,26 @@ namespace eHairdressers.Services.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("eHairdressers.Services.Database.Availability", b =>
+            modelBuilder.Entity("eHairdressers.Services.Database.ChatRoomUser", b =>
+                {
+                    b.HasOne("eHairdressers.Services.Database.ChatRoom", "ChatRoom")
+                        .WithMany("ChatRoomUsers")
+                        .HasForeignKey("ChatRoomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("eHairdressers.Services.Database.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChatRoom");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("eHairdressers.Services.Database.Employees", b =>
                 {
                     b.HasOne("eHairdressers.Services.Database.User", "User")
                         .WithMany()
@@ -589,40 +584,23 @@ namespace eHairdressers.Services.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("eHairdressers.Services.Database.Cart", b =>
+            modelBuilder.Entity("eHairdressers.Services.Database.Message", b =>
                 {
-                    b.HasOne("eHairdressers.Services.Database.Orders", "Order")
-                        .WithMany("Cart")
-                        .HasForeignKey("OrderId");
-
-                    b.HasOne("eHairdressers.Services.Database.User", "User")
-                        .WithMany("Cart")
-                        .HasForeignKey("UserId")
+                    b.HasOne("eHairdressers.Services.Database.ChatRoom", "ChatRoom")
+                        .WithMany("Messages")
+                        .HasForeignKey("ChatRoomId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Order");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("eHairdressers.Services.Database.CartItems", b =>
-                {
-                    b.HasOne("eHairdressers.Services.Database.Cart", "Cart")
-                        .WithMany("CartItems")
-                        .HasForeignKey("CartId")
+                    b.HasOne("eHairdressers.Services.Database.User", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("eHairdressers.Services.Database.Products", "Product")
-                        .WithMany("CartItems")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("ChatRoom");
 
-                    b.Navigation("Cart");
-
-                    b.Navigation("Product");
+                    b.Navigation("Sender");
                 });
 
             modelBuilder.Entity("eHairdressers.Services.Database.OrderItems", b =>
@@ -646,13 +624,24 @@ namespace eHairdressers.Services.Migrations
 
             modelBuilder.Entity("eHairdressers.Services.Database.Orders", b =>
                 {
-                    b.HasOne("eHairdressers.Services.Database.Customers", "Customer")
+                    b.HasOne("eHairdressers.Services.Database.User", "User")
                         .WithMany()
-                        .HasForeignKey("CustomerId")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Customer");
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("eHairdressers.Services.Database.Payment", b =>
+                {
+                    b.HasOne("eHairdressers.Services.Database.Orders", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
                 });
 
             modelBuilder.Entity("eHairdressers.Services.Database.Products", b =>
@@ -710,9 +699,11 @@ namespace eHairdressers.Services.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("eHairdressers.Services.Database.Cart", b =>
+            modelBuilder.Entity("eHairdressers.Services.Database.ChatRoom", b =>
                 {
-                    b.Navigation("CartItems");
+                    b.Navigation("ChatRoomUsers");
+
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("eHairdressers.Services.Database.Employees", b =>
@@ -722,15 +713,11 @@ namespace eHairdressers.Services.Migrations
 
             modelBuilder.Entity("eHairdressers.Services.Database.Orders", b =>
                 {
-                    b.Navigation("Cart");
-
                     b.Navigation("OrderItems");
                 });
 
             modelBuilder.Entity("eHairdressers.Services.Database.Products", b =>
                 {
-                    b.Navigation("CartItems");
-
                     b.Navigation("OrderItems");
                 });
 
@@ -747,8 +734,6 @@ namespace eHairdressers.Services.Migrations
             modelBuilder.Entity("eHairdressers.Services.Database.User", b =>
                 {
                     b.Navigation("Appointments");
-
-                    b.Navigation("Cart");
 
                     b.Navigation("UserRoles");
                 });

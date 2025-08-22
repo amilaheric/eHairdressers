@@ -8,7 +8,7 @@ namespace eHairdressers.Filters
 {
     public class ErrorFilter:ExceptionFilterAttribute
     {
-     /*   public override void OnException(ExceptionContext context)
+        public override void OnException(ExceptionContext context)
         {
 
 
@@ -27,6 +27,6 @@ namespace eHairdressers.Filters
 
             context.Result = new JsonResult(new {errors = list});
         }
-      */
+      
     }
 }

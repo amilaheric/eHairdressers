@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using eHairdressers.Model;
 using eHairdressers.Model.Requests;
 using eHairdressers.Model.SearchObjects;
 using eHairdressers.Services.Database;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,8 +16,20 @@ namespace eHairdressers.Services
     {
         public BaseCRUDService(eHairdressersContext context, IMapper mapper) : base(context, mapper)
         {
+    
+
         }
         public virtual async Task BeforeInsert(TDb entity, TInsert insert)
+        {
+
+        }
+
+        public virtual async Task AfterInsert(TDb entity, TInsert insert)
+        {
+
+        }
+
+        public virtual async Task AfterUpdate(TDb entity, TUpdate update)
         {
 
         }
@@ -25,19 +39,13 @@ namespace eHairdressers.Services
             var set = _context.Set<TDb>();
 
             TDb entity = _mapper.Map<TDb>(insert);
-          /*  if (entity is Appointment && insert is AppointmentInsertRequest)
-            {
-                var appointmentEntity = entity as Appointment;
-                var appointmentInsert = insert as AppointmentInsertRequest;
-
-                // Assuming the desired format is "yyyy-MM-dd HH:mm:ss"
-                appointmentEntity.AppointmentDateTime = appointmentInsert.AppointmentDateTime.ToString("dd.MM.yyyy");
-            }*/
 
             set.Add(entity);
             await BeforeInsert(entity, insert);
 
             await _context.SaveChangesAsync();
+
+            await AfterInsert(entity, insert);
 
             return _mapper.Map<T>(entity);
         }
@@ -51,6 +59,8 @@ namespace eHairdressers.Services
             _mapper.Map(update, entity);
           
             await _context.SaveChangesAsync();
+
+            await AfterUpdate(entity, update);
 
             return _mapper.Map<T>(entity);
         }

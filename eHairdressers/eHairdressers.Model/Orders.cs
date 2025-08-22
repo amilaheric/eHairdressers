@@ -9,11 +9,13 @@ namespace eHairdressers.Model
     public class Orders
     {
         public int OrderId { get; set; }
-        public string OrderNumber { get; set; } = null!;
-        public int CustomerId { get; set; }
+        public string OrderNumber { get; set; } 
+        public int UserId { get; set; }
+
+        public double TotalWithoutVAT { get; set; }
+        public double TotalWithVAT { get; set; }
+        public string Status { get; set; }  
         public DateTime OrderDate { get; set; }
-        public bool Status { get; set; }
-        public string PaymentId { get; set; }
-        public bool? Canceled { get; set; }
+        public List<OrderItems> OrderItems { get; set; } 
     }
 }

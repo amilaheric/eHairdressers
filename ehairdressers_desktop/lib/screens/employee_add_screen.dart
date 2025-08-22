@@ -3,11 +3,14 @@ import 'dart:io';
 
 import 'package:ehairdressers_mobile/models/SearchResult.dart';
 import 'package:ehairdressers_mobile/models/user.dart';
+import 'package:ehairdressers_mobile/models/employee.dart';
 import 'package:ehairdressers_mobile/providers/EmployeeProvider.dart';
 import 'package:ehairdressers_mobile/widgets/master_screen.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:form_builder_validators/form_builder_validators.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class EmployeeAdd extends StatefulWidget {
@@ -24,7 +27,7 @@ class _EmployeeAddState extends State<EmployeeAdd> {
   final _formKey = GlobalKey<FormBuilderState>();
   Map<String, dynamic> _initialValue = {};
   late EmployeeProvider _employeeProvider;
-  SearchResult<User>? employee;
+  SearchResult<Employee>? employee;
   String defaultImagePath = '.dart_tool/assets/default.jpg';
 
   Future<void> pickImage() async {
@@ -39,8 +42,7 @@ class _EmployeeAddState extends State<EmployeeAdd> {
         _base64Image = base64Encode(selectedImage!.readAsBytesSync());
       });
     } else {
-      // User canceled the selection
-      // Handle accordingly
+     
     }
   }
 
@@ -56,8 +58,13 @@ class _EmployeeAddState extends State<EmployeeAdd> {
   }
 
   Future initForm() async {
-    employee = await _employeeProvider.get();
-    print(employee);
+    try {
+      employee = await _employeeProvider.get();
+      print(employee);
+    } catch (e) {
+      print("Error loading employees: $e");
+      employee = SearchResult<Employee>();
+    }
 
     setState(() {
       isLoading = false;
@@ -80,17 +87,25 @@ class _EmployeeAddState extends State<EmployeeAdd> {
                       onPressed: () async {
                         _formKey.currentState?.saveAndValidate();
 
-                        print(_formKey.currentState?.value);
-                        print(_formKey.currentState?.value['name']);
                         var request =
-                            new Map.from(_formKey.currentState!.value);
+                            Map<String, dynamic>.from(_formKey.currentState!.value);
 
                         request['image'] = _base64Image;
 
-                        print(request['image']);
                         try {
                           if (widget.user == null) {
-                            await _employeeProvider.insert(request);
+                         
+                            await _employeeProvider.createEmployeeWithRole(request);
+                      
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Employee created successfully!'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                            
+                
+                            Navigator.pop(context);
                           }
                         } on Exception catch (e) {
                           showDialog(
@@ -148,45 +163,146 @@ class _EmployeeAddState extends State<EmployeeAdd> {
             FormBuilderTextField(
               name: 'name',
               decoration: InputDecoration(labelText: "Name"),
+              validator: FormBuilderValidators.compose([
+                FormBuilderValidators.required(),
+              ]),
             ),
             SizedBox(height: 10),
             FormBuilderTextField(
               name: 'surname',
               decoration: InputDecoration(labelText: "Surname"),
+              validator: FormBuilderValidators.compose([
+                FormBuilderValidators.required(),
+              ]),
             ),
             SizedBox(height: 10),
             FormBuilderTextField(
               name: 'email',
               decoration: InputDecoration(labelText: "Email"),
+              validator: FormBuilderValidators.compose([
+                FormBuilderValidators.required(),
+                FormBuilderValidators.email(),
+              ]),
             ),
             SizedBox(height: 10),
             FormBuilderTextField(
               name: 'phone',
               decoration: InputDecoration(labelText: "Phone"),
+              validator: FormBuilderValidators.compose([
+                FormBuilderValidators.required(),
+                (value) {
+                  if (value != null) {
+                    var cleanPhone = value.replaceAll(RegExp(r'[^\d]'), '');
+                    if (cleanPhone.length < 10) {
+                      return 'Phone number must be at least 10 digits';
+                    }
+                  }
+                  return null;
+                },
+              ]),
             ),
             SizedBox(height: 10),
             FormBuilderTextField(
               name: 'username',
               decoration: InputDecoration(labelText: "Username"),
+              validator: FormBuilderValidators.compose([
+                FormBuilderValidators.required(),
+              ]),
             ),
             SizedBox(height: 10),
             FormBuilderTextField(
               name: 'password',
               decoration: InputDecoration(labelText: "Password"),
+              obscureText: true,
+              validator: FormBuilderValidators.compose([
+                FormBuilderValidators.required(),
+                FormBuilderValidators.minLength(6),
+              ]),
             ),
             SizedBox(height: 10),
             FormBuilderTextField(
               name: 'passwordconfirm',
-              decoration: InputDecoration(labelText: "Passwordconfirm"),
+              decoration: InputDecoration(labelText: "Confirm Password"),
+              obscureText: true,
+              validator: FormBuilderValidators.compose([
+                FormBuilderValidators.required(),
+                (value) {
+                  if (value != _formKey.currentState?.value['password']) {
+                    return 'Passwords do not match';
+                  }
+                  return null;
+                },
+              ]),
             ),
             SizedBox(height: 10),
             FormBuilderTextField(
-              name: 'citizenshipnumber',
+              name: 'citizenshipNumber',
               decoration: InputDecoration(labelText: "Citizenship number"),
+              validator: FormBuilderValidators.compose([
+                FormBuilderValidators.required(),
+              ]),
+            ),
+            SizedBox(height: 10),
+            _buildDateField('birthDate', 'Birth Date'),
+            SizedBox(height: 10),
+            _buildDateField('hireDate', 'Hire Date'),
+            SizedBox(height: 10),
+            FormBuilderTextField(
+              name: 'salary',
+              decoration: InputDecoration(labelText: "Salary"),
+              keyboardType: TextInputType.number,
+              validator: FormBuilderValidators.compose([
+                FormBuilderValidators.required(),
+                FormBuilderValidators.numeric(),
+              ]),
+            ),
+            SizedBox(height: 10),
+            FormBuilderTextField(
+              name: 'address',
+              decoration: InputDecoration(labelText: "Address"),
+              maxLines: 3,
+              validator: FormBuilderValidators.compose([
+                FormBuilderValidators.required(),
+                (value) {
+                  if (value != null && value.length > 50) {
+                    return 'Address cannot exceed 50 characters';
+                  }
+                  return null;
+                },
+              ]),
             ),
           ]),
         ),
       ),
+    );
+  }
+
+  Widget _buildDateField(String name, String label) {
+    return FormBuilderTextField(
+      name: name,
+      readOnly: true,
+      decoration: InputDecoration(
+        labelText: label,
+        suffixIcon: IconButton(
+          icon: Icon(Icons.calendar_today),
+          onPressed: () async {
+            final DateTime? picked = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now(),
+              firstDate: DateTime(1900),
+              lastDate: DateTime.now(),
+            );
+            if (picked != null) {
+              _formKey.currentState?.fields[name]?.didChange(
+                DateFormat('yyyy-MM-dd').format(picked),
+              );
+            }
+          },
+        ),
+      ),
+      validator: FormBuilderValidators.compose([
+        FormBuilderValidators.required(),
+      ]),
     );
   }
 }

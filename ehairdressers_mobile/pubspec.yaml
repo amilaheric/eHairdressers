@@ -39,6 +39,7 @@ dependencies:
   http: ^1.2.2
   json_annotation: ^4.9.0
   flutter_form_builder: ^9.7.0
+  signalr_netcore: ^1.4.0
 
 dev_dependencies:
   flutter_test:

@@ -7,7 +7,7 @@ class BrandProvider extends BaseProvider<Brand> {
 
   @override
   Brand fromJson(data) {
-    // TODO: implement fromJson
+  
     return Brand.fromJson(data);
   }
 }

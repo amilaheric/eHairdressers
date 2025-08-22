@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ namespace eHairdressers.Services.Database
     {
         [Key]
         public int EmployeeId { get; set; }
+        public int UserId { get; set; }  // Foreign key to User table
         public string Name { get; set; } = null!;
         public string Surname { get; set; } = null!;
         public DateTime HireDate { get; set; }
@@ -19,7 +21,10 @@ namespace eHairdressers.Services.Database
         public string CitizenshipNumber { get; set; }
         public string? Phone { get; set; }
         public int Salary { get; set; }
-
+        
+        // Navigation property to User
+        public virtual User User { get; set; } = null!;
+        
         public virtual ICollection<Appointment> ListAppointments { get; } = new List<Appointment>();
     }
 }

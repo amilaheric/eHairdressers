@@ -19,6 +19,7 @@ namespace eHairdressers.Controllers
         [HttpPost]
         public virtual async Task<T> Insert(TInsert insert)
         {
+          
             return await _service.Insert(insert);
         }
 

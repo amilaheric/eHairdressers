@@ -1,11 +1,14 @@
-import 'package:ehairdressers_mobile/models/SearchResult.dart';
-import 'package:ehairdressers_mobile/providers/EmployeeProvider.dart';
-import 'package:ehairdressers_mobile/screens/employee_add_screen.dart';
-import 'package:ehairdressers_mobile/screens/product_insert_screen.dart';
-import 'package:ehairdressers_mobile/screens/reservation_list.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import '../screens/reservation_list.dart';
+import '../screens/product_insert_screen.dart';
+import '../screens/employee_add_screen.dart';
+import '../screens/product_sales_report_screen.dart';
+import '../screens/salon_operations_report_screen.dart';
+import '../providers/EmployeeProvider.dart';
+import '../models/SearchResult.dart';
+import '../models/employee.dart';
 import '../models/user.dart';
+import 'package:provider/provider.dart';
 
 class MasterScreenWidget extends StatefulWidget {
   Widget? child;
@@ -19,7 +22,7 @@ class MasterScreenWidget extends StatefulWidget {
 
 class _MasterScreenWidgetState extends State<MasterScreenWidget> {
   late EmployeeProvider _employeeProvider;
-  SearchResult<User>? userresult;
+  SearchResult<Employee>? employeeResult;
 
   @override
   void initState() {
@@ -30,8 +33,14 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
   }
 
   Future initForm() async {
-    userresult = await _employeeProvider.get();
-    print(userresult?.result?.firstOrNull?.username);
+    try {
+      employeeResult = await _employeeProvider.get();
+      print(employeeResult?.result?.firstOrNull?.name);
+    } catch (e) {
+      print("Error loading employees: $e");
+      // Set empty result if there's an error
+      employeeResult = SearchResult<Employee>();
+    }
   }
 
   Widget build(BuildContext context) {
@@ -41,15 +50,9 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
             style: TextStyle(color: Color(0x0FFe5c89d))),
         backgroundColor: Color(0x0FF13414b),
         actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Row(children: [
-              Icon(Icons.person, color: Colors.white),
-              SizedBox(width: 8),
-              Text(userresult?.result?.firstOrNull?.username ?? "unkonwn",
-                  style: TextStyle(color: Colors.white)),
-            ]),
-          )
+          // Notification widget temporarily removed
+          // NotificationWidget(),
+          SizedBox(width: 16),
         ],
       ),
       drawer: Drawer(
@@ -74,6 +77,20 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
               onTap: () {
                 Navigator.of(context).push(
                     MaterialPageRoute(builder: (context) => EmployeeAdd()));
+              },
+            ),
+            ListTile(
+              title: Text("Product Sales Report"),
+              onTap: () {
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => ProductSalesReportScreen()));
+              },
+            ),
+            ListTile(
+              title: Text("Salon Operations Report"),
+              onTap: () {
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => SalonOperationsReportScreen()));
               },
             ),
             ListTile(

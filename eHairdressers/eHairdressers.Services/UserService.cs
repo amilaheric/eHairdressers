@@ -22,7 +22,8 @@ namespace eHairdressers.Services
         {
             if (search?.IsUlogeIncluded == true)
             {
-                query = query.Include("UserRoles.Role");
+                query = query.Include(u => u.UserRoles)
+                           .ThenInclude(ur => ur.Role);
             }
             return base.AddInclude(query, search);
         }
@@ -30,6 +31,55 @@ namespace eHairdressers.Services
         {
             entity.PasswordSalt = GenerateSalt();
             entity.PasswordHash = GenerateHash(entity.PasswordSalt, insert.Password);
+        }
+
+        public override async Task<Model.User> Insert(UserInsertRequest insert)
+        {
+            var user = await base.Insert(insert);
+
+            await AssignCustomerRole(user);
+            
+            var userWithRoles = await _context.User
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.UserId == user.UserId);
+            
+            return _mapper.Map<Model.User>(userWithRoles);
+        }
+
+        private async Task AssignCustomerRole(Model.User user)
+        {
+            try
+            {
+          
+                var customerRole = await _context.Role
+                    .Where(r => r.Name == "Customer")
+                    .Select(r => r.RoleId)
+                    .FirstOrDefaultAsync();
+
+                if (customerRole != 0)
+                {
+                
+                    var userRole = new Database.UserRole
+                    {
+                        UserId = user.UserId,
+                        RoleId = customerRole,
+                        DateChange = DateTime.Now
+                    };
+
+                    _context.UserRole.Add(userRole);
+                    await _context.SaveChangesAsync();
+                }
+                else
+                {
+                    Console.WriteLine("WARNING: Customer role not found in the system");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERROR: Failed to assign Customer role: {ex.Message}");
+               
+            }
         }
         public override IQueryable<User> AddFilter(IQueryable<User> query, UserSearchObject? search = null)
         {
@@ -68,19 +118,27 @@ namespace eHairdressers.Services
 
         public async Task<Model.User> Login(string username, string password)
         {
-           var entity = await _context.User.Include("UserRoles.Role").FirstOrDefaultAsync(X=> X.Username == username);
+           var entity = await _context.User
+                .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .FirstOrDefaultAsync(u => u.Username == username);
 
             if (entity == null)
             {
+              
                 return null;
             }
+            
+        
+            
             var hash = GenerateHash(entity.PasswordSalt, password);
-
+          
             if ( hash != entity.PasswordHash)
             {
                 return null;
             }
 
+         
             return _mapper.Map<Model.User>(entity);
         }
 

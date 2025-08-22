@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/physics.dart';
 import 'package:http/http.dart' as http;
 import '../models/SearchResult.dart';
 import '../utils/util.dart';
@@ -18,31 +17,63 @@ class BaseProvider<T> with ChangeNotifier {
   }
 
   Future<SearchResult<T>> get({dynamic filter}) async {
-    var url = "$_baseUrl$endpoint";
-    print(url);
-    if (filter != null) {
-      var queryString = getQueryString(filter);
-      url = "$url?$queryString";
-    }
-
-    var uri = Uri.parse(url);
-    var headers = createHeaders();
-
-    var response = await http.get(uri, headers: headers);
-    if (isValidResponse(response)) {
-      var data = jsonDecode(response.body);
-      var result = SearchResult<T>();
-
-      result.count = data['count'];
-
-      for (var item in data['result']) {
-        result.result?.add(fromJson(item));
-        print(result);
+    try {
+      var url = "$_baseUrl$endpoint";
+      if (filter != null) {
+        var queryString = getQueryString(filter);
+        url = "$url?$queryString";
       }
 
-      return result;
-    } else
-      throw new Exception("Unknown error");
+      var uri = Uri.parse(url);
+      var headers = createHeaders();
+
+      var response = await http.get(uri, headers: headers);
+      
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body);
+        
+        var result = SearchResult<T>();
+        result.count = data['Count'] ?? 0;
+
+        if (data['Result'] != null) {
+          result.result.clear();
+          for (var item in data['Result']) {
+            try {
+              var parsedItem = fromJson(item);
+              result.result.add(parsedItem);
+            } catch (e) {
+              
+            }
+          }
+        } else if (data is List) {
+          result.result.clear();
+          for (var item in data) {
+            try {
+              var parsedItem = fromJson(item);
+              result.result.add(parsedItem);
+            } catch (e) {
+        
+            }
+          }
+        }
+        
+        return result;
+      } else if (response.statusCode == 401) {
+        throw Exception("Unauthorized - Please check your credentials");
+      } else if (response.statusCode == 404) {
+        throw Exception("Endpoint not found: $url");
+      } else if (response.statusCode >= 500) {
+        throw Exception("Server error (${response.statusCode}): ${response.body}");
+      } else {
+        throw Exception("API error (${response.statusCode}): ${response.body}");
+      }
+    } catch (e) {
+      if (e is Exception) {
+        rethrow;
+      } else {
+        throw Exception("Network error: $e");
+      }
+    }
   }
 
   Future<T> insert(dynamic request) async {
@@ -51,7 +82,9 @@ class BaseProvider<T> with ChangeNotifier {
     var headers = createHeaders();
 
     var jsonRequest = jsonEncode(request);
+    
     var response = await http.post(uri, headers: headers, body: jsonRequest);
+    
 
     if (isValidResponse(response)) {
       var data = jsonDecode(response.body);
@@ -66,13 +99,10 @@ class BaseProvider<T> with ChangeNotifier {
     var uri = Uri.parse(url);
     var headers = createHeaders();
 
-    var jsonRequest = jsonEncode(request);
     var response = await http.delete(uri, headers: headers);
 
     if (response.statusCode == 200) {
-      print('Appointment deleted successfully');
     } else {
-      print('Failed to delete appointment: ${response.statusCode}');
       throw Exception('Failed to delete appointment');
     }
   }
@@ -103,7 +133,6 @@ class BaseProvider<T> with ChangeNotifier {
     } else if (response.statusCode == 401) {
       throw new Exception("Unauthorized");
     } else {
-      print(response.body);
       throw new Exception("Something bad happened please try again");
     }
   }
@@ -111,7 +140,6 @@ class BaseProvider<T> with ChangeNotifier {
   Map<String, String> createHeaders() {
     String username = Authorization.username ?? "";
     String password = Authorization.password ?? "";
-    print("pass creds $username $password");
     String basicAuth =
         "Basic ${base64Encode(utf8.encode('$username:$password'))}";
 
@@ -155,3 +183,5 @@ class BaseProvider<T> with ChangeNotifier {
     return query;
   }
 }
+
+

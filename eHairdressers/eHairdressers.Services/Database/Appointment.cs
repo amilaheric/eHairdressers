@@ -19,15 +19,14 @@ namespace eHairdressers.Services.Database
         public DateTime AppointmentDate { get; set; }
         [Column(TypeName = "Time")]
         public TimeSpan AppointmentTime { get; set; }
-        public bool Approved { get; set; }
-        public string Comment { get; set; }
+        public bool? Approved { get; set; }
+        public string? Comment { get; set; }
 
-        [ForeignKey("ServiceId")]
-        public virtual Service Service { get; set; } = null!;
-        [ForeignKey("UserId")]
-        public virtual User User { get; set; } = null!;
-        [ForeignKey("EmployeeId")]
-        public virtual Employees Employee { get; set; } = null!;
+        public virtual Service Service { get; set; }
+
+        public virtual User User { get; set; } 
+
+        public virtual Employees Employee { get; set; }
 
 
     }

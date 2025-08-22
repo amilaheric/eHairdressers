@@ -7,24 +7,30 @@ part of 'appointment.dart';
 // **************************************************************************
 
 Appointment _$AppointmentFromJson(Map<String, dynamic> json) => Appointment(
-      (json['appointmentId'] as num?)?.toInt(),
-      (json['employeeId'] as num?)?.toInt(),
-      (json['userId'] as num?)?.toInt(),
-      (json['serviceId'] as num?)?.toInt(),
-      json['comment'] as String?,
-      json['employeeName'] as String?,
-      json['username'] as String?,
-      json['serviceName'] as String?,
+      (json['AppointmentId'] as num?)?.toInt(),
+      (json['EmployeeId'] as num?)?.toInt(),
+      (json['UserId'] as num?)?.toInt(),
+      (json['ServiceId'] as num?)?.toInt(),
+      json['Comment'] as String?,
+      json['EmployeeName'] as String?,
+      json['Username'] as String?,
+      json['ServiceName'] as String?,
+      json['AppointmentDate'] as String?,
+      json['AppointmentTime'] as String?,
+      json['Approved'] as bool?,
     );
 
 Map<String, dynamic> _$AppointmentToJson(Appointment instance) =>
     <String, dynamic>{
-      'appointmentId': instance.appointmentId,
-      'employeeId': instance.employeeId,
-      'userId': instance.userId,
-      'serviceId': instance.serviceId,
-      'comment': instance.comment,
-      'employeeName': instance.employeeName,
-      'username': instance.username,
-      'serviceName': instance.serviceName,
+      'AppointmentId': instance.appointmentId,
+      'EmployeeId': instance.employeeId,
+      'UserId': instance.userId,
+      'ServiceId': instance.serviceId,
+      'Comment': instance.comment,
+      'EmployeeName': instance.employeeName,
+      'Username': instance.username,
+      'ServiceName': instance.serviceName,
+      'AppointmentDate': instance.appointmentDate,
+      'AppointmentTime': instance.appointmentTime,
+      'Approved': instance.approved,
     };

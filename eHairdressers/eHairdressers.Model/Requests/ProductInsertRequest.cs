@@ -16,7 +16,6 @@ namespace eHairdressers.Model.Requests
         public int? BrandId { get; set; }
         public byte[]? Image { get; set; }
         public byte[]? ImageThumb { get; set; }
-        public string? PaymentId { get; set; }
 
 
     }

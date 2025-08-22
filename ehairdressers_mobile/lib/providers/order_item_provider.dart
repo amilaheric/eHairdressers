@@ -1,10 +1,11 @@
-import '../models/order.dart';
+import '../models/order_item.dart';
 import 'base_provider.dart';
 
-class OrderItemProvider extends BaseProvider<Orders> {
-  OrderItemProvider() : super("OrderItem");
+class OrderItemProvider extends BaseProvider<OrderItem> {
+  OrderItemProvider() : super("OrderItems");
 
-  Orders fromJson(data) {
-    return Orders.fromJson(data);
+  @override
+  OrderItem fromJson(data) {
+    return OrderItem.fromJson(data);
   }
 }

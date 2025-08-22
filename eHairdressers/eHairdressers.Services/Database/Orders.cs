@@ -11,23 +11,13 @@ namespace eHairdressers.Services.Database
     {
         [Key]
         public int OrderId { get; set; }
-
+        public int UserId { get; set; }
         public string OrderNumber { get; set; } = null!;
-
-        public int CustomerId { get; set; }
-
+        public double TotalPrice { get; set; }
         public DateTime OrderDate { get; set; }
-
         public bool Status { get; set; }
-
-        public bool? Canceled { get; set; }
-        public string PaymentId { get; set; } = null!;
-
-        public virtual ICollection<Cart> Cart { get; } = new List<Cart>();
-
-        public virtual Customers Customer { get; set; } = null!;
-
-        public virtual ICollection<OrderItems> OrderItems { get; } = new List<OrderItems>();
+        public virtual User User { get; set; } = null!;
+        public virtual ICollection<OrderItems> OrderItems { get; set; } = new List<OrderItems>();
     }
 
 }

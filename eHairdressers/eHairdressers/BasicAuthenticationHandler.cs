@@ -21,6 +21,7 @@ namespace eHairdressers
         {
             if (!Request.Headers.ContainsKey("Authorization"))
             {
+                Console.WriteLine("DEBUG: Missing Authorization header");
                 return AuthenticateResult.Fail("Missing header");
             }
 
@@ -31,18 +32,24 @@ namespace eHairdressers
             var username = credentials[0];
             var password = credentials[1];
 
+            Console.WriteLine($"DEBUG: Attempting login for username: {username}");
+
             var user = await _userService.Login(username, password);
 
             if (user == null)
             {
+                Console.WriteLine($"DEBUG: Login failed for username: {username}");
                 return null;
             }
 
             if (username == null || password == null)
             {
+                Console.WriteLine($"DEBUG: Username or password is null for: {username}");
                 return AuthenticateResult.Fail("Incorrect username or password");
             } else
             {
+                Console.WriteLine($"DEBUG: Login successful for user: {username}, UserRoles count: {user.UserRoles?.Count ?? 0}");
+                
                 var claims = new List<Claim>()
                 {
                     new Claim(ClaimTypes.Name, user.Name),
@@ -52,6 +59,7 @@ namespace eHairdressers
                 foreach(var role in user.UserRoles)
                 {
                     claims.Add(new Claim(ClaimTypes.Role, role.Role.Name));
+                    Console.WriteLine($"DEBUG: Added role claim: {role.Role.Name}");
                 }
 
                 var identity = new ClaimsIdentity(claims,Scheme.Name);

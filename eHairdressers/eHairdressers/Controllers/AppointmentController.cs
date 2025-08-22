@@ -28,5 +28,31 @@ namespace eHairdressers.Controllers
           return await _appointmentService.GetAvailableTimes(date);
         }
 
+        [HttpGet("available-employees")]
+        public async Task<List<Model.Employees>> GetAvailableEmployees()
+        {
+            return await _appointmentService.GetAvailableEmployees();
+        }
+
+        [HttpGet("available-users")]
+        public async Task<List<Model.User>> GetAvailableUsers()
+        {
+            return await _appointmentService.GetAvailableUsers();
+        }
+
+        [HttpGet("available-services")]
+        public async Task<List<Model.Service>> GetAvailableServices()
+        {
+            return await _appointmentService.GetAvailableServices();
+        }
+
+
+
+        [HttpPost]
+        public override async Task<Model.Appointment> Insert([FromBody] AppointmentInsertRequest insert)
+        {
+            return await base.Insert(insert);
+        }
+
     }
 }

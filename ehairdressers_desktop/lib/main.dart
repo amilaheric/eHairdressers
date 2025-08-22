@@ -3,9 +3,16 @@ import 'package:ehairdressers_mobile/providers/BrandProvider.dart';
 import 'package:ehairdressers_mobile/providers/EmployeeProvider.dart';
 import 'package:ehairdressers_mobile/providers/ProductCategoryProvider.dart';
 import 'package:ehairdressers_mobile/providers/ProductProvider.dart';
+import 'package:ehairdressers_mobile/providers/ProductSalesReportProvider.dart';
+import 'package:ehairdressers_mobile/providers/SalonOperationsReportProvider.dart';
+import 'package:ehairdressers_mobile/providers/UserProvider.dart';
 import 'package:ehairdressers_mobile/screens/product_insert_screen.dart';
+import 'package:ehairdressers_mobile/screens/product_sales_report_screen.dart';
+import 'package:ehairdressers_mobile/screens/salon_operations_report_screen.dart';
 import 'package:ehairdressers_mobile/utils/util.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 import 'package:provider/provider.dart';
 
@@ -17,6 +24,9 @@ void main() {
       ChangeNotifierProvider(create: (_) => BrandProvider()),
       ChangeNotifierProvider(create: (_) => ProductCategoryProvider()),
       ChangeNotifierProvider(create: (_) => AppointmentProvider()),
+      ChangeNotifierProvider(create: (_) => ProductSalesReportProvider()),
+      ChangeNotifierProvider(create: (_) => SalonOperationsReportProvider()),
+      ChangeNotifierProvider(create: (_) => UserProvider()),
     ],
     child: const MyApp(),
   ));
@@ -59,10 +69,8 @@ class Login extends StatelessWidget {
   TextEditingController _usernameController = new TextEditingController();
   TextEditingController _passwordController = new TextEditingController();
 
-  late ProductProvider _productProvider;
   @override
   Widget build(BuildContext context) {
-    _productProvider = context.read<ProductProvider>();
     return Scaffold(
       appBar: AppBar(
         title: Text("Login", style: TextStyle(color: Color(0x0FFe5c89d))),
@@ -73,7 +81,7 @@ class Login extends StatelessWidget {
           child: Container(
         constraints: BoxConstraints(maxHeight: 600, maxWidth: 600),
         child: Card(
-          elevation: 0, // Add a shadow (elevation) to the card
+          elevation: 0,
 
           color: Color.fromARGB(255, 255, 255, 255),
           child: Padding(
@@ -111,11 +119,28 @@ class Login extends StatelessWidget {
 
                           Authorization.username = username;
                           Authorization.password = password;
-                          print("ide $username $password");
+                          
                           try {
-                            await _productProvider.get();
-                            Navigator.of(context).push(MaterialPageRoute(
-                                builder: (context) => ProductInsert()));
+                            // Test authentication by trying to fetch appointment data
+                            // This should be accessible to employee users
+                            var url = "https://localhost:7051/Appointment"; // Changed to Appointment
+                            var uri = Uri.parse(url);
+
+                            // Create Basic Auth headers
+                            var credentials = base64Encode(utf8.encode('$username:$password'));
+                            var headers = {
+                              'Authorization': 'Basic $credentials',
+                              'Content-Type': 'application/json',
+                            };
+
+                            var response = await http.get(uri, headers: headers);
+
+                            if (response.statusCode == 200) {
+                              Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (context) => ProductInsert()));
+                            } else {
+                              throw Exception("Authentication failed: ${response.statusCode}");
+                            }
                           } on Exception catch (e) {
                             showDialog(
                                 context: context,

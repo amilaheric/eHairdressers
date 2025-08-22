@@ -1,8 +1,10 @@
 import 'package:ehairdressers_mobile/models/product.dart';
 import 'package:ehairdressers_mobile/providers/cart_provider.dart';
 import 'package:ehairdressers_mobile/providers/product_provider.dart';
+import 'package:ehairdressers_mobile/providers/recommendation_provider.dart';
 import 'package:ehairdressers_mobile/utils/util.dart';
 import 'package:ehairdressers_mobile/widgets/master_screen.dart';
+import 'package:ehairdressers_mobile/widgets/recommendation_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -33,27 +35,46 @@ class _ProductListScreenState extends State<ProductListScreen> {
     var tempData = await _productProvider?.get();
     setState(() {
       data = tempData!;
-      print(data);
+
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    print("called build $data");
+
     return MasterScreenWidget(
       title: "Product list",
+      userId: Authorization.currentUserId,
       child: SingleChildScrollView(
           child: Container(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildProductSearch(),
+           
+            RecommendationSection(
+              userId: Authorization.currentUserId,
+              allProducts: data,
+            ),
+            SizedBox(height: 16),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                "All Products",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
             Container(
               height: 500,
               child: GridView(
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-                    childAspectRatio: 4 / 3,
+                    childAspectRatio: 3 / 3,
                     crossAxisSpacing: 10,
                     mainAxisSpacing: 10),
                 scrollDirection: Axis.vertical,
@@ -89,19 +110,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
             ),
           ),
         ),
-        /* Container(
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          child: IconButton(
-            icon: Icon(Icons.filter_list),
-            onPressed: () async {
-              var tmpData =
-                  await _productProvider?.get({'name': _searchController.text});
-              setState(() {
-                data = tmpData!;
-              });
-            },
-          ),
-        )*/
+                    
       ],
     );
   }
@@ -124,15 +133,11 @@ class _ProductListScreenState extends State<ProductListScreen> {
                   ),
                   Text(x.name ?? ""),
                   Text(x.price.toString()),
-                  Container(
-                    height: 20,
-                    child: IconButton(
-                        onPressed: () {
-                          _cartProvider?.addToCart(x);
-                          print("dodaje se $x");
-                        },
-                        icon: Icon(Icons.shopping_cart)),
-                  )
+                  IconButton(
+                      onPressed: () {
+                        _cartProvider?.addToCart(x);
+                      },
+                      icon: Icon(Icons.shopping_cart)),
                 ]),
               ),
             ))

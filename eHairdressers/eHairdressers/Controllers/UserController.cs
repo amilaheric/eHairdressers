@@ -19,12 +19,5 @@ namespace eHairdressers.Controllers
             return base.Insert(insert);
         }
 
-        //[HttpGet("CheckFreeAppointments")]
-        //public async Task<Appointments> GetFreeAppointemnts([FromBody] AppointmentsSearchObject searchObject)
-        //{
-        //    var freeAppointemnts = 
-        //    return freeAppointemnts;
-        //}
-
     }
 }
