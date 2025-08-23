@@ -1,0 +1,58 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: ehairdressers_sql
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Password123!
+      - MSSQL_PID=Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+      - ./backups:/backups
+    networks:
+      - ehairdressers_network
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: ehairdressers_rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin123
+    ports:
+      - "5672:5672"      
+      - "15672:15672"   
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - ehairdressers_network
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: eHairdressers/Dockerfile
+    container_name: ehairdressers_app
+    ports:
+      - "7052:7051"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Data Source=sqlserver;Initial Catalog=eHairdressers;User ID=sa;Password=Password123!;TrustServerCertificate=True
+    depends_on:
+      - sqlserver
+      - rabbitmq
+    networks:
+      - ehairdressers_network
+    restart: unless-stopped
+
+volumes:
+  sqlserver_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+
+networks:
+  ehairdressers_network:
+    driver: bridge

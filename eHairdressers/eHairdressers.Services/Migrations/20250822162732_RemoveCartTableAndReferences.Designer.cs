@@ -372,45 +372,7 @@ namespace eHairdressers.Services.Migrations
                     b.ToTable("Products");
                 });
 
-            modelBuilder.Entity("eHairdressers.Services.Database.PurchaseHistory", b =>
-                {
-                    b.Property<int>("PurchaseId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PurchaseId"));
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("OrderId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("PurchaseDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("TotalAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("PurchaseId");
-
-                    b.HasIndex("OrderId");
-
-                    b.HasIndex("ProductId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("PurchaseHistory");
-                });
 
             modelBuilder.Entity("eHairdressers.Services.Database.Reviews", b =>
                 {
@@ -706,32 +668,7 @@ namespace eHairdressers.Services.Migrations
                     b.Navigation("Category");
                 });
 
-            modelBuilder.Entity("eHairdressers.Services.Database.PurchaseHistory", b =>
-                {
-                    b.HasOne("eHairdressers.Services.Database.Orders", "Order")
-                        .WithMany()
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
 
-                    b.HasOne("eHairdressers.Services.Database.Products", "Product")
-                        .WithMany()
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("eHairdressers.Services.Database.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Order");
-
-                    b.Navigation("Product");
-
-                    b.Navigation("User");
-                });
 
             modelBuilder.Entity("eHairdressers.Services.Database.Reviews", b =>
                 {

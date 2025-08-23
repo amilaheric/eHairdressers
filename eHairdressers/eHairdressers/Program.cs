@@ -129,11 +129,9 @@ using (var scope = app.Services.CreateScope())
     await eHairdressers.Services.Database.SeedData.SeedRoles(dataContext);
 }
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// Enable Swagger in all environments for API documentation
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

@@ -35,7 +35,7 @@ namespace eHairdressers.Services.Database
             var role = await context.Role.FirstOrDefaultAsync(r => r.Name == roleName);
             if (role == null)
                 return;
-  // Assign role to user
+
             var userRole = new UserRole
             {
                 UserId = userId,
