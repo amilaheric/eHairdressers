@@ -12,7 +12,7 @@ class ProductSalesReportProvider extends BaseProvider<ProductSalesReport> {
   }
 
   Future<List<ProductSalesReport>> _getReportData(DateTime startDate, DateTime endDate, String reportType) async {
-    var url = "https://localhost:7051/api/ProductSalesReport/ProductSalesReport";
+    var url = "http://localhost:7052/api/ProductSalesReport/ProductSalesReport";
     var queryParams = {
       'startDate': startDate.toIso8601String().split('T')[0],
       'endDate': endDate.toIso8601String().split('T')[0],

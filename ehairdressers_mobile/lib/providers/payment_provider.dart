@@ -61,7 +61,7 @@ class PaymentProvider extends BaseProvider<PaymentMethod> {
     try {
       // Use the base class insert method with a custom endpoint
       var customEndpoint = "Payment/process";
-      var url = "https://10.0.2.2:7051/$customEndpoint";
+      var url = "http://10.0.2.2:7052/$customEndpoint";
       var uri = Uri.parse(url);
       
       Map<String, String> headers = createHeaders();
@@ -110,7 +110,7 @@ class PaymentProvider extends BaseProvider<PaymentMethod> {
       
       // Send to backend for database storage
       var customEndpoint = "Payment/process";
-      var url = "https://10.0.2.2:7051/$customEndpoint";
+      var url = "http://10.0.2.2:7052/$customEndpoint";
       var uri = Uri.parse(url);
       
       Map<String, String> headers = createHeaders();

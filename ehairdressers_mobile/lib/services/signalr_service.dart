@@ -26,7 +26,7 @@ class SignalRService {
       _sentMessageIds.clear();
       
       _hubConnection = HubConnectionBuilder()
-          .withUrl('https://10.0.2.2:7051/chatHub')
+          .withUrl('http://10.0.2.2:7052/chatHub')
           .withAutomaticReconnect()
           .build();
 

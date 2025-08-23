@@ -7,7 +7,7 @@ class DatabaseService {
 
   static String get baseUrl {
     _baseUrl ??= const String.fromEnvironment("baseUrl",
-        defaultValue: "https://localhost:7051/");
+        defaultValue: "http://localhost:7052/");
     return _baseUrl!;
   }
 

@@ -101,7 +101,7 @@ class MyHomePage extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Image(
-                    image: AssetImage('.dart_tool/assets/logo.png'),
+                    image: AssetImage('assets/images/logo.png'),
                     height: 150,
                     width: 150,
                   ),

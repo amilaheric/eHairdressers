@@ -36,8 +36,9 @@ services:
       dockerfile: eHairdressers/Dockerfile
     container_name: ehairdressers_app
     ports:
-      - "7052:7051"
+      - "7052:7052"
     environment:
+      - ASPNETCORE_URLS=http://+:7052
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Data Source=sqlserver;Initial Catalog=eHairdressers;User ID=sa;Password=Password123!;TrustServerCertificate=True
     depends_on:

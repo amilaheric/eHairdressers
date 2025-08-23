@@ -11,7 +11,6 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -21,21 +20,20 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.MaxDepth = 32;
     });
 
-// Add SignalR
+
 builder.Services.AddSignalR();
 
-// Add CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.SetIsOriginAllowed(origin => true) // Allow any origin
+        policy.SetIsOriginAllowed(origin => true)
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
     });
 });
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -96,20 +94,14 @@ builder.Services.AddSingleton<IBus>(provider =>
     return bus;
 });
 
-// Register messaging service
+
 builder.Services.AddTransient<IMessagingService, MessagingService>();
 builder.Services.AddTransient<IEmployeeService, EmployeeService>();
 
 
 
-
-
-
 builder.Services.AddAutoMapper(typeof(IProductsService));
-//builder.Services.AddControllers(x =>
-//{
-//    x.Filters.Add<ErrorFilter>();
-//});
+
 
 builder.Services.AddAuthentication("BasicAuthentication")
     .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
@@ -125,15 +117,20 @@ using (var scope = app.Services.CreateScope())
     var dataContext = scope.ServiceProvider.GetRequiredService<eHairdressersContext>();
     dataContext.Database.Migrate();
     
-    // Seed default roles
-    await eHairdressers.Services.Database.SeedData.SeedRoles(dataContext);
+    // Seed comprehensive data for development
+    await eHairdressers.Services.Database.SeedData.SeedAllData(dataContext);
 }
 // Configure the HTTP request pipeline.
 // Enable Swagger in all environments for API documentation
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
+// Only use HTTPS redirection in Production to avoid SSL issues in Development
+if (app.Environment.IsProduction())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseStaticFiles();
 
 // Use CORS
