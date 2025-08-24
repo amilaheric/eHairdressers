@@ -28,7 +28,7 @@ class _EmployeeAddState extends State<EmployeeAdd> {
   Map<String, dynamic> _initialValue = {};
   late EmployeeProvider _employeeProvider;
   SearchResult<Employee>? employee;
-  String defaultImagePath = 'assets/images/default.jpg';
+  String defaultImagePath = '.dart_tool/assets/default.jpg';
 
   Future<void> pickImage() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -85,16 +85,7 @@ class _EmployeeAddState extends State<EmployeeAdd> {
                     alignment: Alignment.center,
                     child: ElevatedButton(
                       onPressed: () async {
-                        // Validate form before proceeding
-                        if (_formKey.currentState?.saveAndValidate() != true) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Please fix all validation errors before submitting'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
+                        _formKey.currentState?.saveAndValidate();
 
                         var request =
                             Map<String, dynamic>.from(_formKey.currentState!.value);
@@ -187,73 +178,23 @@ class _EmployeeAddState extends State<EmployeeAdd> {
             SizedBox(height: 10),
             FormBuilderTextField(
               name: 'email',
-              decoration: InputDecoration(
-                labelText: "Email",
-                hintText: "example@email.com",
-                prefixIcon: Icon(Icons.email),
-              ),
-              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(labelText: "Email"),
               validator: FormBuilderValidators.compose([
                 FormBuilderValidators.required(),
                 FormBuilderValidators.email(),
-                (value) {
-                  if (value != null) {
-                    // Additional email format validation
-                    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
-                    if (!emailRegex.hasMatch(value)) {
-                      return 'Please enter a valid email address';
-                    }
-                    // Check for common invalid patterns
-                    if (value.contains('..') || value.startsWith('.') || value.endsWith('.')) {
-                      return 'Email format is invalid';
-                    }
-                  }
-                  return null;
-                },
               ]),
             ),
             SizedBox(height: 10),
             FormBuilderTextField(
               name: 'phone',
-              decoration: InputDecoration(
-                labelText: "Phone",
-                hintText: "+387 XX XXX-XXXX or 06X XXX-XXXX",
-                prefixIcon: Icon(Icons.phone),
-              ),
-              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(labelText: "Phone"),
               validator: FormBuilderValidators.compose([
                 FormBuilderValidators.required(),
                 (value) {
-                  if (value != null && value.isNotEmpty) {
-                    // Remove all non-digit characters for validation
+                  if (value != null) {
                     var cleanPhone = value.replaceAll(RegExp(r'[^\d]'), '');
-                    
-                    // Check minimum length
-                    if (cleanPhone.length < 8) {
-                      return 'Phone number must be at least 8 digits';
-                    }
-                    
-                    // Check maximum length  
-                    if (cleanPhone.length > 15) {
-                      return 'Phone number cannot exceed 15 digits';
-                    }
-                    
-                    // Check for valid Bosnian phone number patterns
-                    if (value.startsWith('+387')) {
-                      // International format for Bosnia
-                      if (cleanPhone.length < 11 || cleanPhone.length > 12) {
-                        return 'Invalid international phone format';
-                      }
-                    } else if (value.startsWith('06') || value.startsWith('03')) {
-                      // Local mobile/landline format
-                      if (cleanPhone.length < 8 || cleanPhone.length > 9) {
-                        return 'Invalid local phone format';
-                      }
-                    } else {
-                      // Generic validation for other formats
-                      if (!RegExp(r'^[\+]?[0-9\s\-\(\)]{8,15}$').hasMatch(value)) {
-                        return 'Please enter a valid phone number';
-                      }
+                    if (cleanPhone.length < 10) {
+                      return 'Phone number must be at least 10 digits';
                     }
                   }
                   return null;
@@ -263,79 +204,31 @@ class _EmployeeAddState extends State<EmployeeAdd> {
             SizedBox(height: 10),
             FormBuilderTextField(
               name: 'username',
-              decoration: InputDecoration(
-                labelText: "Username",
-                hintText: "At least 3 characters, no spaces",
-                prefixIcon: Icon(Icons.person),
-              ),
+              decoration: InputDecoration(labelText: "Username"),
               validator: FormBuilderValidators.compose([
                 FormBuilderValidators.required(),
-                FormBuilderValidators.minLength(3),
-                FormBuilderValidators.maxLength(20),
-                (value) {
-                  if (value != null) {
-                    // Username format validation
-                    if (value.contains(' ')) {
-                      return 'Username cannot contain spaces';
-                    }
-                    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
-                      return 'Username can only contain letters, numbers, and underscores';
-                    }
-                    if (value.startsWith('_') || value.endsWith('_')) {
-                      return 'Username cannot start or end with underscore';
-                    }
-                  }
-                  return null;
-                },
               ]),
             ),
             SizedBox(height: 10),
             FormBuilderTextField(
               name: 'password',
-              decoration: InputDecoration(
-                labelText: "Password",
-                hintText: "At least 8 characters with letters and numbers",
-                prefixIcon: Icon(Icons.lock),
-              ),
+              decoration: InputDecoration(labelText: "Password"),
               obscureText: true,
               validator: FormBuilderValidators.compose([
                 FormBuilderValidators.required(),
-                FormBuilderValidators.minLength(8),
-                (value) {
-                  if (value != null) {
-                    // Strong password validation
-                    if (!RegExp(r'^(?=.*[a-zA-Z])(?=.*\d)').hasMatch(value)) {
-                      return 'Password must contain both letters and numbers';
-                    }
-                    if (value.length < 8) {
-                      return 'Password must be at least 8 characters long';
-                    }
-                    if (!RegExp(r'^[a-zA-Z0-9@#$%^&*()_+\-=\[\]{}|;:,.<>?]+$').hasMatch(value)) {
-                      return 'Password contains invalid characters';
-                    }
-                  }
-                  return null;
-                },
+                FormBuilderValidators.minLength(6),
               ]),
             ),
             SizedBox(height: 10),
             FormBuilderTextField(
               name: 'passwordconfirm',
-              decoration: InputDecoration(
-                labelText: "Confirm Password",
-                hintText: "Re-enter your password",
-                prefixIcon: Icon(Icons.lock_outline),
-              ),
+              decoration: InputDecoration(labelText: "Confirm Password"),
               obscureText: true,
               validator: FormBuilderValidators.compose([
                 FormBuilderValidators.required(),
                 (value) {
-                  final password = _formKey.currentState?.value['password'];
-                  if (value != password) {
+                  if (value != _formKey.currentState?.value['password']) {
                     return 'Passwords do not match';
-                  }
-                  if (value == null || value.isEmpty) {
-                    return 'Please confirm your password';
                   }
                   return null;
                 },

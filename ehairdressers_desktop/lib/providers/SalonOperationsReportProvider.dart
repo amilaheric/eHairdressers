@@ -81,7 +81,7 @@ class SalonOperationsReportProvider extends BaseProvider<SalonOperationsReport> 
   }
 
   Future<SalonOperationsReport?> _getReportData(DateTime startDate, DateTime endDate, String reportType) async {
-    var url = "http://localhost:7052/api/SalonOperationsReport/SalonOperationsReport";
+    var url = "http://localhost:7051/api/SalonOperationsReport/SalonOperationsReport";
     var queryParams = {
       'startDate': startDate.toIso8601String().split('T')[0],
       'endDate': endDate.toIso8601String().split('T')[0],

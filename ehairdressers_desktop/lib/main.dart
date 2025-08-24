@@ -88,7 +88,7 @@ class Login extends StatelessWidget {
             padding: const EdgeInsets.all(40.0),
             child: Column(children: [
               Image(
-                image: AssetImage('assets/images/logo.png'),
+                image: AssetImage('.dart_tool/assets/logo.png'),
                 height: 270,
                 width: 270,
               ),
@@ -123,7 +123,7 @@ class Login extends StatelessWidget {
                           try {
                             // Test authentication by trying to fetch appointment data
                             // This should be accessible to employee users
-                            var url = "http://localhost:7052/Appointment"; // Changed to Appointment
+                            var url = "http://localhost:7051/Appointment"; // Changed to Appointment
                             var uri = Uri.parse(url);
 
                             // Create Basic Auth headers

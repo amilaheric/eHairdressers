@@ -1,9 +1,59 @@
 using Microsoft.EntityFrameworkCore;
+using System.IO;
 
 namespace eHairdressers.Services.Database
 {
     public static class SeedData
     {
+        private static byte[]? LoadImageAsBytes(string imagePath)
+        {
+            try
+            {
+                Console.WriteLine($"Attempting to load image from: {imagePath}");
+                Console.WriteLine($"Current directory: {Directory.GetCurrentDirectory()}");
+                
+                if (File.Exists(imagePath))
+                {
+                    Console.WriteLine($"File exists! Reading bytes...");
+                    var bytes = File.ReadAllBytes(imagePath);
+                    Console.WriteLine($"Successfully read {bytes.Length} bytes from {imagePath}");
+                    return bytes;
+                }
+                else
+                {
+                    Console.WriteLine($"File does not exist: {imagePath}");
+                    
+                    // Try alternative paths for Docker
+                    var alternativePaths = new[]
+                    {
+                        Path.Combine("wwwroot", "images", "products", "serum2.jpg"),
+                        Path.Combine("..", "wwwroot", "images", "products", "serum2.jpg"),
+                        Path.Combine("..", "..", "wwwroot", "images", "products", "serum2.jpg"),
+                        Path.Combine("/app", "wwwroot", "images", "products", "serum2.jpg")
+                    };
+                    
+                    foreach (var altPath in alternativePaths)
+                    {
+                        Console.WriteLine($"Trying alternative path: {altPath}");
+                        if (File.Exists(altPath))
+                        {
+                            Console.WriteLine($"Found file at: {altPath}");
+                            var bytes = File.ReadAllBytes(altPath);
+                            Console.WriteLine($"Successfully read {bytes.Length} bytes from {altPath}");
+                            return bytes;
+                        }
+                    }
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading image {imagePath}: {ex.Message}");
+                Console.WriteLine($"Exception details: {ex}");
+                return null;
+            }
+        }
+
         public static async Task SeedAllData(eHairdressersContext context)
         {
             try
@@ -276,17 +326,46 @@ namespace eHairdressers.Services.Database
             var category = await context.Category.FirstAsync();
             var brand = await context.Brand.FirstAsync();
 
+            // Load all product images as bytes from files
+            var serumImageBytes = LoadImageAsBytes("wwwroot/images/products/serum2.jpg");
+            var samponImageBytes = LoadImageAsBytes("wwwroot/images/products/sampon.webp");
+            var uljeImageBytes = LoadImageAsBytes("wwwroot/images/products/ulje.jpg");
+            var regeneratorImageBytes = LoadImageAsBytes("wwwroot/images/products/regenerator.jpg");
+            var kupkaImageBytes = LoadImageAsBytes("wwwroot/images/products/kupka.jpg");
+
+            // Log image loading results
+            if (serumImageBytes != null)
+                Console.WriteLine($"Successfully loaded serum image. Size: {serumImageBytes.Length} bytes");
+            else
+                Console.WriteLine("Failed to load serum image from file");
+
+            if (samponImageBytes != null)
+                Console.WriteLine($"Successfully loaded sampon image. Size: {samponImageBytes.Length} bytes");
+            else
+                Console.WriteLine("Failed to load sampon image from file");
+
+            if (uljeImageBytes != null)
+                Console.WriteLine($"Successfully loaded ulje image. Size: {uljeImageBytes.Length} bytes");
+            else
+                Console.WriteLine("Failed to load ulje image from file");
+
+            if (regeneratorImageBytes != null)
+                Console.WriteLine($"Successfully loaded regenerator image. Size: {regeneratorImageBytes.Length} bytes");
+            else
+                Console.WriteLine("Failed to load regenerator image from file");
+
+            if (kupkaImageBytes != null)
+                Console.WriteLine($"Successfully loaded kupka image. Size: {kupkaImageBytes.Length} bytes");
+            else
+                Console.WriteLine("Failed to load kupka image from file");
+
             var products = new List<Products>
             {
-                new Products { Name = "serum", Description = "serum za vrhove", Code = "s33", Price = 100.0, CategoryId = category.Id, BrandId = brand.Id },
-                new Products { Name = "sampon", Description = "sampon za suhu kosu", Code = "sh11", Price = 80.0, CategoryId = category.Id, BrandId = brand.Id },
-                new Products { Name = "Ulje za kosu", Description = "ulje za suhu kosu", Code = "u1222", Price = 100.0, CategoryId = category.Id, BrandId = brand.Id },
-                new Products { Name = "regenerator", Description = "regenerator", Code = "r121", Price = 50.0, CategoryId = category.Id, BrandId = brand.Id },
-                new Products { Name = "kupka", Description = "kupka", Code = "k122", Price = 85.0, CategoryId = category.Id, BrandId = brand.Id },
-                new Products { Name = "Professional Shampoo", Description = "High-quality shampoo for all hair types", Code = "SH001", Price = 15.99, CategoryId = category.Id, BrandId = brand.Id },
-                new Products { Name = "Conditioner", Description = "Nourishing conditioner for smooth hair", Code = "CO001", Price = 12.99, CategoryId = category.Id, BrandId = brand.Id },
-                new Products { Name = "Hair Gel", Description = "Strong hold gel for styling", Code = "HG001", Price = 8.99, CategoryId = category.Id, BrandId = brand.Id },
-                new Products { Name = "Hair Spray", Description = "Flexible hold hair spray", Code = "HS001", Price = 9.99, CategoryId = category.Id, BrandId = brand.Id }
+                new Products { Name = "serum", Description = "serum za vrhove", Code = "s33", Price = 100.0, CategoryId = category.Id, BrandId = brand.Id, Image = serumImageBytes },
+                new Products { Name = "sampon", Description = "sampon za suhu kosu", Code = "sh11", Price = 80.0, CategoryId = category.Id, BrandId = brand.Id, Image = samponImageBytes },
+                new Products { Name = "Ulje za kosu", Description = "ulje za suhu kosu", Code = "u1222", Price = 100.0, CategoryId = category.Id, BrandId = brand.Id, Image = uljeImageBytes },
+                new Products { Name = "regenerator", Description = "regenerator", Code = "r121", Price = 50.0, CategoryId = category.Id, BrandId = brand.Id, Image = regeneratorImageBytes },
+                new Products { Name = "kupka", Description = "kupka", Code = "k122", Price = 85.0, CategoryId = category.Id, BrandId = brand.Id, Image = kupkaImageBytes },
             };
 
             context.Products.AddRange(products);

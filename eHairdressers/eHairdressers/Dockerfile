@@ -26,4 +26,6 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app .
 #/publish
+# Copy wwwroot folder from root context
+COPY wwwroot ./wwwroot
 ENTRYPOINT ["dotnet", "eHairdressers.dll"]
