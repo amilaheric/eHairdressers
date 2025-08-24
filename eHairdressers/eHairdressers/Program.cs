@@ -67,6 +67,7 @@ builder.Services.AddTransient<IOrdersService, OrdersService>();
 builder.Services.AddTransient<IOrderItemsService, OrderItemsService>();
 builder.Services.AddTransient<IPaymentService, PaymentService>();
 
+
 builder.Services.AddTransient<IReviewService, ReviewService>();
 builder.Services.AddTransient<IChatRoomService, ChatRoomService>();
 builder.Services.AddTransient<IMessageService, MessageService>();

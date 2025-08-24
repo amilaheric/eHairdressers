@@ -40,7 +40,7 @@ services:
     environment:
       - ASPNETCORE_URLS=http://+:7051
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Data Source=sqlserver;Initial Catalog=eHairdressers;User ID=sa;Password=Password123!;TrustServerCertificate=True
+      - ConnectionStrings__DefaultConnection=Data Source=sqlserver;Initial Catalog=IB160064;User ID=sa;Password=Password123!;TrustServerCertificate=True
     depends_on:
       - sqlserver
       - rabbitmq

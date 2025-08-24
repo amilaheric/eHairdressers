@@ -6,16 +6,113 @@ namespace eHairdressers.Services.Database
     {
         public static async Task SeedAllData(eHairdressersContext context)
         {
-            await SeedRoles(context);
-            await SeedCategories(context);
-            await SeedBrands(context);
-            await SeedServices(context);
-            await SeedUsers(context);
-            await SeedEmployees(context);
-            await SeedProducts(context);
-            await SeedSampleAppointments(context); // Re-enabled after fixing index errors
-            await SeedSampleOrders(context);
-            await SeedPayments(context); // New method for payments
+            try
+            {
+                Console.WriteLine("Starting database seeding...");
+                
+                // Clear existing data first to ensure clean seed
+                Console.WriteLine("Clearing existing data...");
+                await ClearExistingData(context);
+                Console.WriteLine("Existing data cleared successfully.");
+                
+                Console.WriteLine("Seeding roles...");
+                await SeedRoles(context);
+                Console.WriteLine("Roles seeded successfully.");
+                
+                Console.WriteLine("Seeding categories...");
+                await SeedCategories(context);
+                Console.WriteLine("Categories seeded successfully.");
+                
+                Console.WriteLine("Seeding brands...");
+                await SeedBrands(context);
+                Console.WriteLine("Brands seeded successfully.");
+                
+                Console.WriteLine("Seeding services...");
+                await SeedServices(context);
+                Console.WriteLine("Services seeded successfully.");
+                
+                Console.WriteLine("Seeding users...");
+                await SeedUsers(context);
+                Console.WriteLine("Users seeded successfully.");
+                
+                Console.WriteLine("Seeding employees...");
+                await SeedEmployees(context);
+                Console.WriteLine("Employees seeded successfully.");
+                
+                Console.WriteLine("Seeding products...");
+                await SeedProducts(context);
+                Console.WriteLine("Products seeded successfully.");
+                
+                Console.WriteLine("Seeding appointments...");
+                await SeedSampleAppointments(context);
+                Console.WriteLine("Appointments seeded successfully.");
+                
+                Console.WriteLine("Seeding orders...");
+                await SeedSampleOrders(context);
+                Console.WriteLine("Orders seeded successfully.");
+                
+                Console.WriteLine("Seeding payments...");
+                await SeedPayments(context);
+                Console.WriteLine("Payments seeded successfully.");
+                
+                Console.WriteLine("Database seeding completed successfully!");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error during database seeding: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                throw; // Re-throw to prevent silent failures
+            }
+        }
+
+        public static async Task ClearExistingData(eHairdressersContext context)
+        {
+            try
+            {
+                Console.WriteLine("Clearing UserRole table...");
+                context.UserRole.RemoveRange(await context.UserRole.ToListAsync());
+                
+                Console.WriteLine("Clearing Employees table...");
+                context.Employees.RemoveRange(await context.Employees.ToListAsync());
+                
+                Console.WriteLine("Clearing Appointments table...");
+                context.Appointments.RemoveRange(await context.Appointments.ToListAsync());
+                
+                Console.WriteLine("Clearing OrderItems table...");
+                context.OrderItems.RemoveRange(await context.OrderItems.ToListAsync());
+                
+                Console.WriteLine("Clearing Orders table...");
+                context.Orders.RemoveRange(await context.Orders.ToListAsync());
+                
+                Console.WriteLine("Clearing Payments table...");
+                context.Payments.RemoveRange(await context.Payments.ToListAsync());
+                
+                Console.WriteLine("Clearing Products table...");
+                context.Products.RemoveRange(await context.Products.ToListAsync());
+                
+                Console.WriteLine("Clearing Services table...");
+                context.Services.RemoveRange(await context.Services.ToListAsync());
+                
+                Console.WriteLine("Clearing User table...");
+                context.User.RemoveRange(await context.User.ToListAsync());
+                
+                Console.WriteLine("Clearing Role table...");
+                context.Role.RemoveRange(await context.Role.ToListAsync());
+                
+                Console.WriteLine("Clearing Category table...");
+                context.Category.RemoveRange(await context.Category.ToListAsync());
+                
+                Console.WriteLine("Clearing Brand table...");
+                context.Brand.RemoveRange(await context.Brand.ToListAsync());
+                
+                await context.SaveChangesAsync();
+                Console.WriteLine("All existing data cleared successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error clearing existing data: {ex.Message}");
+                throw;
+            }
         }
 
         public static async Task SeedRoles(eHairdressersContext context)
@@ -81,10 +178,6 @@ namespace eHairdressers.Services.Database
             if (await context.User.AnyAsync())
                 return;
 
-            var users = new List<User>();
-            var defaultPassword = "pass!123";
-
-            // Create users with proper password hashing
             var userData = new[]
             {
                 new { Name = "amila", Surname = "heric", Username = "amila", Email = "amila@to.com", CitizenshipNumber = "123456789", Phone = "+1234567890", BirthDate = "1990-01-01" },
@@ -92,18 +185,14 @@ namespace eHairdressers.Services.Database
                 new { Name = "ermina", Surname = "music", Username = "ermina", Email = "ermina@hotmail.com", CitizenshipNumber = "456789123", Phone = "+4567891230", BirthDate = "1988-12-10" },
                 new { Name = "esma", Surname = "gudic", Username = "esma", Email = "esma@hotmail.com", CitizenshipNumber = "789123456", Phone = "+7891234560", BirthDate = "1995-03-20" },
                 new { Name = "arza", Surname = "malkic", Username = "arza", Email = "arza@example.com", CitizenshipNumber = "321654987", Phone = "+3216549870", BirthDate = "1985-07-08" },
-                new { Name = "John", Surname = "Doe", Username = "johndoe", Email = "john@example.com", CitizenshipNumber = "111111111", Phone = "+1111111111", BirthDate = "1990-01-01" },
-                new { Name = "Jane", Surname = "Smith", Username = "janesmith", Email = "jane@example.com", CitizenshipNumber = "222222222", Phone = "+2222222222", BirthDate = "1992-05-15" },
-                new { Name = "Mike", Surname = "Johnson", Username = "mikejohnson", Email = "mike@example.com", CitizenshipNumber = "333333333", Phone = "+3333333333", BirthDate = "1988-12-10" },
-                new { Name = "Sarah", Surname = "Williams", Username = "sarahwilliams", Email = "sarah@example.com", CitizenshipNumber = "444444444", Phone = "+4444444444", BirthDate = "1995-03-20" },
-                new { Name = "David", Surname = "Brown", Username = "davidbrown", Email = "david@example.com", CitizenshipNumber = "555555555", Phone = "+5555555555", BirthDate = "1985-07-08" },
-                new { Name = "Emily", Surname = "Davis", Username = "emilydavis", Email = "emily@example.com", CitizenshipNumber = "666666666", Phone = "+6666666666", BirthDate = "1993-09-12" },
-                new { Name = "Chris", Surname = "Wilson", Username = "chriswilson", Email = "chris@example.com", CitizenshipNumber = "777777777", Phone = "+7777777777", BirthDate = "1987-11-25" },
-                new { Name = "Anna", Surname = "Taylor", Username = "annataylor", Email = "anna@example.com", CitizenshipNumber = "888888888", Phone = "+8888888888", BirthDate = "1991-04-18" },
-                new { Name = "Tom", Surname = "Anderson", Username = "tomanderson", Email = "tom@example.com", CitizenshipNumber = "999999999", Phone = "+9999999999", BirthDate = "1989-06-30" },
-                new { Name = "Lisa", Surname = "Thomas", Username = "lisathomas", Email = "lisa@example.com", CitizenshipNumber = "101010101", Phone = "+1010101010", BirthDate = "1994-02-14" },
-                new { Name = "Mark", Surname = "Jackson", Username = "markjackson", Email = "mark@example.com", CitizenshipNumber = "121212121", Phone = "+1212121212", BirthDate = "1986-08-22" }
+                new { Name = "ajlin", Surname = "turk", Username = "ajlin", Email = "ajlin@example.com", CitizenshipNumber = "123569874", Phone = "123222111111", BirthDate = "1992-05-15" },
+                new { Name = "hana", Surname = "malkic", Username = "hana", Email = "hana@example.com", CitizenshipNumber = "444444444444444444", Phone = "+38762589997", BirthDate = "1993-09-12" },
+                new { Name = "ana", Surname = "anic", Username = "ana", Email = "ana@example.com", CitizenshipNumber = "111111111", Phone = "12355566699", BirthDate = "1994-02-14" },
+                new { Name = "kan", Surname = "kano", Username = "kan", Email = "kan@example.com", CitizenshipNumber = "7777777777", Phone = "7896541235", BirthDate = "1986-08-22" }
             };
+
+            var users = new List<User>();
+            var defaultPassword = "password123";
 
             foreach (var userInfo in userData)
             {
@@ -129,11 +218,7 @@ namespace eHairdressers.Services.Database
             context.User.AddRange(users);
             await context.SaveChangesAsync();
 
-            // Assign default roles
-            foreach (var user in users)
-            {
-                await AssignDefaultRoleToUser(context, user.UserId, "Customer");
-            }
+            // Don't assign roles here - we'll do it after creating employees
         }
 
         public static async Task SeedEmployees(eHairdressersContext context)
@@ -141,28 +226,46 @@ namespace eHairdressers.Services.Database
             if (await context.Employees.AnyAsync())
                 return;
 
+            // Get users to link employees to
+            var users = await context.User.ToListAsync();
+            
             var employees = new List<Employees>
             {
-                new Employees { Name = "emina", Surname = "heric", CitizenshipNumber = "123456", Phone = "123222222", HireDate = new DateTime(2020, 1, 15), BirthDate = "1990-01-01", Address = "Sarajevo, BiH", Salary = 1500 },
-                new Employees { Name = "ajlin", Surname = "turk", CitizenshipNumber = "123569874", Phone = "123222111111", HireDate = new DateTime(2021, 3, 10), BirthDate = "1992-05-15", Address = "Sarajevo, BiH", Salary = 1400 },
-                new Employees { Name = "arza", Surname = "cehaja", CitizenshipNumber = "2222211111", Phone = "+3872645879", HireDate = new DateTime(2020, 6, 1), BirthDate = "1988-12-10", Address = "Sarajevo, BiH", Salary = 1600 },
-                new Employees { Name = "esma", Surname = "gudic", CitizenshipNumber = "11111111111111111", Phone = "+38761019236", HireDate = new DateTime(2021, 9, 15), BirthDate = "1995-03-20", Address = "Sarajevo, BiH", Salary = 1350 },
-                new Employees { Name = "hana", Surname = "malkic", CitizenshipNumber = "444444444444444444", Phone = "+38762589997", HireDate = new DateTime(2022, 1, 20), BirthDate = "1993-09-12", Address = "Sarajevo, BiH", Salary = 1300 },
-                new Employees { Name = "ermina", Surname = "music", CitizenshipNumber = "44444444444444444444", Phone = "1236547894", HireDate = new DateTime(2021, 7, 8), BirthDate = "1987-11-25", Address = "Sarajevo, BiH", Salary = 1450 },
-                new Employees { Name = "esma", Surname = "gudic", CitizenshipNumber = "1111111111111111111", Phone = "45666699887", HireDate = new DateTime(2022, 3, 12), BirthDate = "1991-04-18", Address = "Sarajevo, BiH", Salary = 1400 },
-                new Employees { Name = "arza", Surname = "malkic", CitizenshipNumber = "111223333", Phone = "123456987", HireDate = new DateTime(2020, 11, 5), BirthDate = "1989-06-30", Address = "Sarajevo, BiH", Salary = 1550 },
-                new Employees { Name = "ana", Surname = "anic", CitizenshipNumber = "111111111", Phone = "12355566699", HireDate = new DateTime(2021, 5, 18), BirthDate = "1994-02-14", Address = "Sarajevo, BiH", Salary = 1350 },
-                new Employees { Name = "kan", Surname = "kano", CitizenshipNumber = "7777777777", Phone = "7896541235", HireDate = new DateTime(2022, 8, 22), BirthDate = "1986-08-22", Address = "Sarajevo, BiH", Salary = 1500 },
-                new Employees { Name = "Emma", Surname = "Wilson", CitizenshipNumber = "EMP001", Phone = "+1111111111", HireDate = new DateTime(2020, 1, 15), BirthDate = "1990-01-01", Address = "Sarajevo, BiH", Salary = 1600 },
-                new Employees { Name = "Alex", Surname = "Davis", CitizenshipNumber = "EMP002", Phone = "+2222222222", HireDate = new DateTime(2021, 3, 10), BirthDate = "1992-05-15", Address = "Sarajevo, BiH", Salary = 1400 },
-                new Employees { Name = "Lisa", Surname = "Miller", CitizenshipNumber = "EMP003", Phone = "+3333333333", HireDate = new DateTime(2022, 6, 1), BirthDate = "1988-12-10", Address = "Sarajevo, BiH", Salary = 1350 },
-                new Employees { Name = "Michael", Surname = "Johnson", CitizenshipNumber = "EMP004", Phone = "+4444444444", HireDate = new DateTime(2021, 8, 12), BirthDate = "1995-03-20", Address = "Sarajevo, BiH", Salary = 1550 },
-                new Employees { Name = "Sophie", Surname = "Brown", CitizenshipNumber = "EMP005", Phone = "+5555555555", HireDate = new DateTime(2022, 2, 28), BirthDate = "1985-07-08", Address = "Sarajevo, BiH", Salary = 1450 },
-                new Employees { Name = "Daniel", Surname = "Taylor", CitizenshipNumber = "EMP006", Phone = "+6666666666", HireDate = new DateTime(2020, 12, 10), BirthDate = "1993-09-12", Address = "Sarajevo, BiH", Salary = 1500 }
+                new Employees { UserId = users.First(u => u.Username == "emina").UserId, Name = "emina", Surname = "heric", CitizenshipNumber = "987654321", Phone = "+0987654321", HireDate = new DateTime(2020, 1, 15), BirthDate = "1990-01-01", Address = "Sarajevo, BiH", Salary = 1500 },
+                new Employees { UserId = users.First(u => u.Username == "ermina").UserId, Name = "ermina", Surname = "music", CitizenshipNumber = "456789123", Phone = "+4567891230", HireDate = new DateTime(2021, 7, 8), BirthDate = "1988-12-10", Address = "Sarajevo, BiH", Salary = 1450 }
             };
 
             context.Employees.AddRange(employees);
             await context.SaveChangesAsync();
+
+            // Now immediately populate the UserRole table
+            await PopulateUserRolesBasedOnEmployees(context);
+        }
+
+        public static async Task PopulateUserRolesBasedOnEmployees(eHairdressersContext context)
+        {
+            // Get all users
+            var users = await context.User.ToListAsync();
+            
+            // Get all employee user IDs
+            var employeeUserIds = await context.Employees
+                .Select(e => e.UserId)
+                .ToListAsync();
+
+            foreach (var user in users)
+            {
+                // Check if user is an employee
+                if (employeeUserIds.Contains(user.UserId))
+                {
+                    // User is an employee - assign Employee role (role ID 2)
+                    await AssignDefaultRoleToUser(context, user.UserId, "Employee");
+                }
+                else
+                {
+                    // User is not an employee - assign Customer role (role ID 1)
+                    await AssignDefaultRoleToUser(context, user.UserId, "Customer");
+                }
+            }
         }
 
         public static async Task SeedProducts(eHairdressersContext context)
@@ -348,26 +451,37 @@ namespace eHairdressers.Services.Database
 
         public static async Task AssignDefaultRoleToUser(eHairdressersContext context, int userId, string roleName = "Customer")
         {
-            var existingRoles = await context.UserRole
-                .Where(ur => ur.UserId == userId)
-                .AnyAsync();
-
-            if (existingRoles)
-                return;
-
             var role = await context.Role.FirstOrDefaultAsync(r => r.Name == roleName);
             if (role == null)
                 return;
 
-            var userRole = new UserRole
-            {
-                UserId = userId,
-                RoleId = role.RoleId,
-                DateChange = DateTime.Now
-            };
+            // Check if user already has any roles
+            var existingUserRole = await context.UserRole
+                .FirstOrDefaultAsync(ur => ur.UserId == userId);
 
-            context.UserRole.Add(userRole);
-            await context.SaveChangesAsync();
+            if (existingUserRole != null)
+            {
+                // Update existing role if it's different
+                if (existingUserRole.RoleId != role.RoleId)
+                {
+                    existingUserRole.RoleId = role.RoleId;
+                    existingUserRole.DateChange = DateTime.Now;
+                    await context.SaveChangesAsync();
+                }
+            }
+            else
+            {
+                // Create new role assignment
+                var userRole = new UserRole
+                {
+                    UserId = userId,
+                    RoleId = role.RoleId,
+                    DateChange = DateTime.Now
+                };
+
+                context.UserRole.Add(userRole);
+                await context.SaveChangesAsync();
+            }
         }
     }
 }
