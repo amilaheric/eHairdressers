@@ -35,7 +35,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
       print('Chat Room ID: $chatRoomId');
       
       var response = await http!.get(
-        Uri.parse('http://10.0.2.2:7052/Message/$chatRoomId'),
+        Uri.parse('http://10.0.2.2:7051/Message/$chatRoomId'),
         headers: createHeaders(),
       );
       
@@ -117,7 +117,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
       print('Request: $requestBody');
       
       var response = await http!.post(
-        Uri.parse('http://10.0.2.2:7052/Message'),
+        Uri.parse('http://10.0.2.2:7051/Message'),
         headers: createHeaders(),
         body: json.encode(requestBody),
       );
@@ -155,7 +155,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
       print('Chat Room: ${chatRoom.toJson()}');
       
       var response = await http!.post(
-        Uri.parse('http://10.0.2.2:7052/ChatRoom'),
+        Uri.parse('http://10.0.2.2:7051/ChatRoom'),
         headers: createHeaders(),
         body: json.encode(chatRoom.toJson()),
       );
@@ -230,7 +230,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
       print('Chat Room ID: $chatRoomId, User ID: $userId');
       
       var response = await http!.put(
-        Uri.parse('http://10.0.2.2:7052/Message/Read/$chatRoomId/$userId'),
+        Uri.parse('http://10.0.2.2:7051/Message/Read/$chatRoomId/$userId'),
         headers: createHeaders(),
       );
       
@@ -256,7 +256,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
       print('User ID: $userId');
       
       var response = await http!.get(
-        Uri.parse('http://10.0.2.2:7052/Message/UnreadCount/$userId'),
+        Uri.parse('http://10.0.2.2:7051/Message/UnreadCount/$userId'),
         headers: createHeaders(),
       );
       

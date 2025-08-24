@@ -81,7 +81,7 @@ builder.Services.AddTransient<IRecommendationService, RecommendationService>();
 // Configure EasyNetQ for RabbitMQ messaging
 builder.Services.AddSingleton<IBus>(provider =>
 {
-    var connectionString = "host=localhost;port=5672;virtualHost=/;username=guest;password=guest";
+    var connectionString = "host=rabbitmq;port=5672;virtualHost=/;username=admin;password=admin123";
     var bus = RabbitHutch.CreateBus(connectionString);
     
     // Ensure the bus is properly disposed when the application shuts down
@@ -115,10 +115,19 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var dataContext = scope.ServiceProvider.GetRequiredService<eHairdressersContext>();
-    dataContext.Database.Migrate();
-    
-    // Seed comprehensive data for development
-    await eHairdressers.Services.Database.SeedData.SeedAllData(dataContext);
+    try
+    {
+        dataContext.Database.Migrate();
+        
+        // Seed comprehensive data for development
+        await eHairdressers.Services.Database.SeedData.SeedAllData(dataContext);
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while seeding the database. Application will continue without seed data.");
+        // Don't rethrow - let the application continue
+    }
 }
 // Configure the HTTP request pipeline.
 // Enable Swagger in all environments for API documentation

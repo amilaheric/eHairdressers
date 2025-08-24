@@ -33,7 +33,7 @@ class AppointmentProvider extends BaseProvider<Appointment> {
     if (filter != null && filter is Map && filter.containsKey('UserId')) {
       // Use path parameter format: /Appointment/{userId}
       var userId = filter['UserId'];
-      var url = "http://10.0.2.2:7052/Appointment/$userId";
+      var url = "http://10.0.2.2:7051/Appointment/$userId";
       print("Using path parameter URL: $url");
       
       // Make the HTTP request directly for path parameter
@@ -253,13 +253,13 @@ class AppointmentProvider extends BaseProvider<Appointment> {
     print('User ID: $userId');
     
     try {
-      var url = "http://10.0.2.2:7052/Review/available-appointments/$userId";
+      var url = "http://10.0.2.2:7051/Review/available-appointments/$userId";
       print("URL: $url");
       
       var uri = Uri.parse(url);
       var headers = createHeaders();
       
-      // Create HTTP client with SSL certificate bypass for development
+     
       var client = http.Client();
       
       try {

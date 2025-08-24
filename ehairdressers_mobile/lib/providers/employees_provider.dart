@@ -17,7 +17,7 @@ class EmployeesProvider extends ChangeNotifier {
 
   // Get base API URL
   String get baseApiUrl {
-    const String baseUrl = String.fromEnvironment("baseUrl", defaultValue: "http://10.0.2.2:7052/");
+    const String baseUrl = String.fromEnvironment("baseUrl", defaultValue: "http://10.0.2.2:7051/");
     return baseUrl.endsWith("/") ? baseUrl : "$baseUrl/";
   }
 

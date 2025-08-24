@@ -13,8 +13,9 @@ namespace eHairdressers.Services.Database
             await SeedUsers(context);
             await SeedEmployees(context);
             await SeedProducts(context);
-            await SeedSampleAppointments(context);
+            await SeedSampleAppointments(context); // Re-enabled after fixing index errors
             await SeedSampleOrders(context);
+            await SeedPayments(context); // New method for payments
         }
 
         public static async Task SeedRoles(eHairdressersContext context)
@@ -40,7 +41,7 @@ namespace eHairdressers.Services.Database
 
             var categories = new List<Category>
             {
-                new Category { Name = "kerastase" }
+                new Category { Name = "kerastase", Description = "Premium hair care products" }
             };
 
             context.Category.AddRange(categories);
@@ -80,25 +81,50 @@ namespace eHairdressers.Services.Database
             if (await context.User.AnyAsync())
                 return;
 
-            var users = new List<User>
+            var users = new List<User>();
+            var defaultPassword = "pass!123";
+
+            // Create users with proper password hashing
+            var userData = new[]
             {
-                new User { Name = "amila", Surname = "heric", Username = "amila", Email = "amila@to.com", CitizenshipNumber = "123456789", Phone = "+1234567890", BirthDate = "1990-01-01", PasswordHash = "hashed_password", PasswordSalt = "salt" },
-                new User { Name = "emina", Surname = "heric", Username = "emina", Email = "emina@to.com", CitizenshipNumber = "987654321", Phone = "+0987654321", BirthDate = "1992-05-15", PasswordHash = "hashed_password", PasswordSalt = "salt" },
-                new User { Name = "ermina", Surname = "music", Username = "ermina", Email = "ermina@hotmail.com", CitizenshipNumber = "456789123", Phone = "+4567891230", BirthDate = "1988-12-10", PasswordHash = "hashed_password", PasswordSalt = "salt" },
-                new User { Name = "esma", Surname = "gudic", Username = "esma", Email = "esma@hotmail.com", CitizenshipNumber = "789123456", Phone = "+7891234560", BirthDate = "1995-03-20", PasswordHash = "hashed_password", PasswordSalt = "salt" },
-                new User { Name = "arza", Surname = "malkic", Username = "arza", Email = "arza@example.com", CitizenshipNumber = "321654987", Phone = "+3216549870", BirthDate = "1985-07-08", PasswordHash = "hashed_password", PasswordSalt = "salt" },
-                new User { Name = "John", Surname = "Doe", Username = "johndoe", Email = "john@example.com", CitizenshipNumber = "111111111", Phone = "+1111111111", BirthDate = "1990-01-01", PasswordHash = "hashed_password", PasswordSalt = "salt" },
-                new User { Name = "Jane", Surname = "Smith", Username = "janesmith", Email = "jane@example.com", CitizenshipNumber = "222222222", Phone = "+2222222222", BirthDate = "1992-05-15", PasswordHash = "hashed_password", PasswordSalt = "salt" },
-                new User { Name = "Mike", Surname = "Johnson", Username = "mikejohnson", Email = "mike@example.com", CitizenshipNumber = "333333333", Phone = "+3333333333", BirthDate = "1988-12-10", PasswordHash = "hashed_password", PasswordSalt = "salt" },
-                new User { Name = "Sarah", Surname = "Williams", Username = "sarahwilliams", Email = "sarah@example.com", CitizenshipNumber = "444444444", Phone = "+4444444444", BirthDate = "1995-03-20", PasswordHash = "hashed_password", PasswordSalt = "salt" },
-                new User { Name = "David", Surname = "Brown", Username = "davidbrown", Email = "david@example.com", CitizenshipNumber = "555555555", Phone = "+5555555555", BirthDate = "1985-07-08", PasswordHash = "hashed_password", PasswordSalt = "salt" },
-                new User { Name = "Emily", Surname = "Davis", Username = "emilydavis", Email = "emily@example.com", CitizenshipNumber = "666666666", Phone = "+6666666666", BirthDate = "1993-09-12", PasswordHash = "hashed_password", PasswordSalt = "salt" },
-                new User { Name = "Chris", Surname = "Wilson", Username = "chriswilson", Email = "chris@example.com", CitizenshipNumber = "777777777", Phone = "+7777777777", BirthDate = "1987-11-25", PasswordHash = "hashed_password", PasswordSalt = "salt" },
-                new User { Name = "Anna", Surname = "Taylor", Username = "annataylor", Email = "anna@example.com", CitizenshipNumber = "888888888", Phone = "+8888888888", BirthDate = "1991-04-18", PasswordHash = "hashed_password", PasswordSalt = "salt" },
-                new User { Name = "Tom", Surname = "Anderson", Username = "tomanderson", Email = "tom@example.com", CitizenshipNumber = "999999999", Phone = "+9999999999", BirthDate = "1989-06-30", PasswordHash = "hashed_password", PasswordSalt = "salt" },
-                new User { Name = "Lisa", Surname = "Thomas", Username = "lisathomas", Email = "lisa@example.com", CitizenshipNumber = "101010101", Phone = "+1010101010", BirthDate = "1994-02-14", PasswordHash = "hashed_password", PasswordSalt = "salt" },
-                new User { Name = "Mark", Surname = "Jackson", Username = "markjackson", Email = "mark@example.com", CitizenshipNumber = "121212121", Phone = "+1212121212", BirthDate = "1986-08-22", PasswordHash = "hashed_password", PasswordSalt = "salt" }
+                new { Name = "amila", Surname = "heric", Username = "amila", Email = "amila@to.com", CitizenshipNumber = "123456789", Phone = "+1234567890", BirthDate = "1990-01-01" },
+                new { Name = "emina", Surname = "heric", Username = "emina", Email = "emina@to.com", CitizenshipNumber = "987654321", Phone = "+0987654321", BirthDate = "1992-05-15" },
+                new { Name = "ermina", Surname = "music", Username = "ermina", Email = "ermina@hotmail.com", CitizenshipNumber = "456789123", Phone = "+4567891230", BirthDate = "1988-12-10" },
+                new { Name = "esma", Surname = "gudic", Username = "esma", Email = "esma@hotmail.com", CitizenshipNumber = "789123456", Phone = "+7891234560", BirthDate = "1995-03-20" },
+                new { Name = "arza", Surname = "malkic", Username = "arza", Email = "arza@example.com", CitizenshipNumber = "321654987", Phone = "+3216549870", BirthDate = "1985-07-08" },
+                new { Name = "John", Surname = "Doe", Username = "johndoe", Email = "john@example.com", CitizenshipNumber = "111111111", Phone = "+1111111111", BirthDate = "1990-01-01" },
+                new { Name = "Jane", Surname = "Smith", Username = "janesmith", Email = "jane@example.com", CitizenshipNumber = "222222222", Phone = "+2222222222", BirthDate = "1992-05-15" },
+                new { Name = "Mike", Surname = "Johnson", Username = "mikejohnson", Email = "mike@example.com", CitizenshipNumber = "333333333", Phone = "+3333333333", BirthDate = "1988-12-10" },
+                new { Name = "Sarah", Surname = "Williams", Username = "sarahwilliams", Email = "sarah@example.com", CitizenshipNumber = "444444444", Phone = "+4444444444", BirthDate = "1995-03-20" },
+                new { Name = "David", Surname = "Brown", Username = "davidbrown", Email = "david@example.com", CitizenshipNumber = "555555555", Phone = "+5555555555", BirthDate = "1985-07-08" },
+                new { Name = "Emily", Surname = "Davis", Username = "emilydavis", Email = "emily@example.com", CitizenshipNumber = "666666666", Phone = "+6666666666", BirthDate = "1993-09-12" },
+                new { Name = "Chris", Surname = "Wilson", Username = "chriswilson", Email = "chris@example.com", CitizenshipNumber = "777777777", Phone = "+7777777777", BirthDate = "1987-11-25" },
+                new { Name = "Anna", Surname = "Taylor", Username = "annataylor", Email = "anna@example.com", CitizenshipNumber = "888888888", Phone = "+8888888888", BirthDate = "1991-04-18" },
+                new { Name = "Tom", Surname = "Anderson", Username = "tomanderson", Email = "tom@example.com", CitizenshipNumber = "999999999", Phone = "+9999999999", BirthDate = "1989-06-30" },
+                new { Name = "Lisa", Surname = "Thomas", Username = "lisathomas", Email = "lisa@example.com", CitizenshipNumber = "101010101", Phone = "+1010101010", BirthDate = "1994-02-14" },
+                new { Name = "Mark", Surname = "Jackson", Username = "markjackson", Email = "mark@example.com", CitizenshipNumber = "121212121", Phone = "+1212121212", BirthDate = "1986-08-22" }
             };
+
+            foreach (var userInfo in userData)
+            {
+                var passwordSalt = eHairdressers.Services.UserService.GenerateSalt();
+                var passwordHash = eHairdressers.Services.UserService.GenerateHash(passwordSalt, defaultPassword);
+
+                var user = new User
+                {
+                    Name = userInfo.Name,
+                    Surname = userInfo.Surname,
+                    Username = userInfo.Username,
+                    Email = userInfo.Email,
+                    CitizenshipNumber = userInfo.CitizenshipNumber,
+                    Phone = userInfo.Phone,
+                    BirthDate = userInfo.BirthDate,
+                    PasswordHash = passwordHash,
+                    PasswordSalt = passwordSalt
+                };
+
+                users.Add(user);
+            }
 
             context.User.AddRange(users);
             await context.SaveChangesAsync();
@@ -169,9 +195,13 @@ namespace eHairdressers.Services.Database
             if (await context.Appointments.AnyAsync())
                 return;
 
-            var users = await context.User.Take(3).ToListAsync();
+            var users = await context.User.Take(5).ToListAsync();
             var employees = await context.Employees.Take(5).ToListAsync();
             var service = await context.Services.FirstAsync();
+
+            // Ensure we have enough data
+            if (users.Count < 3 || employees.Count < 5)
+                return; // Not enough data to create appointments
 
             var appointments = new List<Appointment>
             {
@@ -179,16 +209,11 @@ namespace eHairdressers.Services.Database
                 new Appointment { UserId = users[0].UserId, EmployeeId = employees[0].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 8, 8), AppointmentTime = new TimeSpan(9, 0, 0), Approved = null, Comment = "Regular customer" },
                 new Appointment { UserId = users[0].UserId, EmployeeId = employees[0].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 8, 8), AppointmentTime = new TimeSpan(10, 0, 0), Approved = false, Comment = "Follow-up appointment" },
                 new Appointment { UserId = users[0].UserId, EmployeeId = employees[0].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 8, 17), AppointmentTime = new TimeSpan(16, 0, 0), Approved = false, Comment = "Evening appointment" },
-                new Appointment { UserId = users[0].UserId, EmployeeId = employees[9].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 8, 20), AppointmentTime = new TimeSpan(12, 0, 0), Approved = false, Comment = "Lunch time appointment" },
+                new Appointment { UserId = users[0].UserId, EmployeeId = employees[1].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 8, 20), AppointmentTime = new TimeSpan(12, 0, 0), Approved = false, Comment = "Lunch time appointment" },
                 new Appointment { UserId = users[1].UserId, EmployeeId = employees[1].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = DateTime.Today.AddDays(1), AppointmentTime = new TimeSpan(14, 0, 0), Approved = null, Comment = "New customer" },
                 new Appointment { UserId = users[2].UserId, EmployeeId = employees[2].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = DateTime.Today.AddDays(2), AppointmentTime = new TimeSpan(16, 0, 0), Approved = null, Comment = "Special occasion" },
-                new Appointment { UserId = users[3].UserId, EmployeeId = employees[3].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = DateTime.Today.AddDays(3), AppointmentTime = new TimeSpan(11, 0, 0), Approved = null, Comment = "Regular customer" },
-                new Appointment { UserId = users[4].UserId, EmployeeId = employees[4].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = DateTime.Today.AddDays(4), AppointmentTime = new TimeSpan(15, 0, 0), Approved = null, Comment = "First time visit" },
-                new Appointment { UserId = users[5].UserId, EmployeeId = employees[5].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = DateTime.Today.AddDays(5), AppointmentTime = new TimeSpan(13, 0, 0), Approved = null, Comment = "Follow-up appointment" },
-                new Appointment { UserId = users[6].UserId, EmployeeId = employees[6].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = DateTime.Today.AddDays(6), AppointmentTime = new TimeSpan(17, 0, 0), Approved = null, Comment = "Evening appointment" },
-                new Appointment { UserId = users[7].UserId, EmployeeId = employees[7].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = DateTime.Today.AddDays(7), AppointmentTime = new TimeSpan(10, 0, 0), Approved = null, Comment = "Morning appointment" },
-                new Appointment { UserId = users[8].UserId, EmployeeId = employees[8].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = DateTime.Today.AddDays(8), AppointmentTime = new TimeSpan(14, 0, 0), Approved = null, Comment = "Regular customer" },
-                new Appointment { UserId = users[9].UserId, EmployeeId = employees[9].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = DateTime.Today.AddDays(9), AppointmentTime = new TimeSpan(16, 0, 0), Approved = null, Comment = "Special occasion" }
+                new Appointment { UserId = users[1].UserId, EmployeeId = employees[3].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = DateTime.Today.AddDays(3), AppointmentTime = new TimeSpan(11, 0, 0), Approved = null, Comment = "Regular customer" },
+                new Appointment { UserId = users[2].UserId, EmployeeId = employees[4].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = DateTime.Today.AddDays(4), AppointmentTime = new TimeSpan(15, 0, 0), Approved = null, Comment = "First time visit" }
             };
 
             context.Appointments.AddRange(appointments);
@@ -198,24 +223,24 @@ namespace eHairdressers.Services.Database
         public static async Task SeedSampleOrders(eHairdressersContext context)
         {
             var users = await context.User.Take(5).ToListAsync();
-            var products = await context.Products.Take(5).ToListAsync();
-            var existingOrders = await context.Orders.ToListAsync(); // Get ALL orders
+            var products = await context.Products.Take(8).ToListAsync();
+            var existingOrders = await context.Orders.ToListAsync();
 
             if (!existingOrders.Any())
             {
                 // Create new orders if none exist
                 var orders = new List<Orders>
                 {
-                    new Orders { UserId = users[0].UserId, OrderNumber = "ORD-638906214062208122", TotalPrice = 280.0, OrderDate = new DateTime(2025, 8, 12, 18, 50, 6), Status = false },
-                    new Orders { UserId = users[0].UserId, OrderNumber = "ORD-638906215839713142", TotalPrice = 165.0, OrderDate = new DateTime(2025, 8, 12, 18, 53, 3), Status = false },
-                    new Orders { UserId = users[0].UserId, OrderNumber = "ORD-638906215888176321", TotalPrice = 200.0, OrderDate = new DateTime(2025, 8, 12, 18, 53, 8), Status = false },
-                    new Orders { UserId = users[1].UserId, OrderNumber = "ORD-638906216061176562", TotalPrice = 150.0, OrderDate = new DateTime(2025, 8, 12, 18, 53, 26), Status = false },
-                    new Orders { UserId = users[1].UserId, OrderNumber = "ORD-638906216232123218", TotalPrice = 320.0, OrderDate = new DateTime(2025, 8, 12, 18, 53, 43), Status = false },
-                    new Orders { UserId = users[2].UserId, OrderNumber = "ORD-638906216400123456", TotalPrice = 180.0, OrderDate = new DateTime(2025, 8, 12, 19, 0, 0), Status = false },
-                    new Orders { UserId = users[2].UserId, OrderNumber = "ORD-638906216500654321", TotalPrice = 95.0, OrderDate = new DateTime(2025, 8, 12, 19, 10, 0), Status = false },
-                    new Orders { UserId = users[3].UserId, OrderNumber = "ORD-638906216600789123", TotalPrice = 250.0, OrderDate = new DateTime(2025, 8, 12, 19, 20, 0), Status = false },
-                    new Orders { UserId = users[3].UserId, OrderNumber = "ORD-638906216700456789", TotalPrice = 175.0, OrderDate = new DateTime(2025, 8, 12, 19, 30, 0), Status = false },
-                    new Orders { UserId = users[4].UserId, OrderNumber = "ORD-638906216800987654", TotalPrice = 300.0, OrderDate = new DateTime(2025, 8, 12, 19, 40, 0), Status = false }
+                    new Orders { UserId = users[0].UserId, OrderNumber = "ORD-001", TotalPrice = 280.0, OrderDate = new DateTime(2025, 1, 15, 14, 30, 0), Status = true },
+                    new Orders { UserId = users[0].UserId, OrderNumber = "ORD-002", TotalPrice = 165.0, OrderDate = new DateTime(2025, 1, 20, 16, 45, 0), Status = true },
+                    new Orders { UserId = users[1].UserId, OrderNumber = "ORD-003", TotalPrice = 200.0, OrderDate = new DateTime(2025, 1, 22, 11, 15, 0), Status = true },
+                    new Orders { UserId = users[1].UserId, OrderNumber = "ORD-004", TotalPrice = 150.0, OrderDate = new DateTime(2025, 1, 25, 13, 20, 0), Status = false },
+                    new Orders { UserId = users[2].UserId, OrderNumber = "ORD-005", TotalPrice = 320.0, OrderDate = new DateTime(2025, 1, 28, 15, 10, 0), Status = true },
+                    new Orders { UserId = users[2].UserId, OrderNumber = "ORD-006", TotalPrice = 180.0, OrderDate = new DateTime(2025, 2, 1, 10, 30, 0), Status = true },
+                    new Orders { UserId = users[3].UserId, OrderNumber = "ORD-007", TotalPrice = 95.0, OrderDate = new DateTime(2025, 2, 5, 17, 45, 0), Status = true },
+                    new Orders { UserId = users[3].UserId, OrderNumber = "ORD-008", TotalPrice = 250.0, OrderDate = new DateTime(2025, 2, 10, 12, 0, 0), Status = false },
+                    new Orders { UserId = users[4].UserId, OrderNumber = "ORD-009", TotalPrice = 175.0, OrderDate = new DateTime(2025, 2, 15, 14, 15, 0), Status = true },
+                    new Orders { UserId = users[0].UserId, OrderNumber = "ORD-010", TotalPrice = 300.0, OrderDate = new DateTime(2025, 2, 20, 16, 30, 0), Status = true }
                 };
 
                 context.Orders.AddRange(orders);
@@ -233,10 +258,6 @@ namespace eHairdressers.Services.Database
                 .Where(o => !ordersWithItems.Contains(o.OrderId))
                 .ToList();
 
-            Console.WriteLine($"Total orders: {existingOrders.Count}");
-            Console.WriteLine($"Orders with items: {ordersWithItems.Count}");
-            Console.WriteLine($"Orders needing items: {ordersNeedingItems.Count}");
-
             if (!ordersNeedingItems.Any())
                 return; // All orders already have items
 
@@ -246,63 +267,20 @@ namespace eHairdressers.Services.Database
 
             foreach (var order in ordersNeedingItems)
             {
-                Console.WriteLine($"Processing order {order.OrderId} with total price {order.TotalPrice}");
+                // Create 1-3 items per order
+                var itemCount = new Random().Next(1, 4);
+                var remainingTotal = order.TotalPrice;
                 
-                // For orders with existing total prices, try to recreate realistic order items
-                if (order.TotalPrice > 0)
+                for (int i = 0; i < itemCount && remainingTotal > 0; i++)
                 {
-                    // Try to create order items that sum up to the existing total price
-                    var remainingTotal = order.TotalPrice;
-                    var itemsCreated = 0;
+                    var product = products[productIndex % products.Count];
+                    var maxQuantity = Math.Min(3, (int)(remainingTotal / product.Price));
                     
-                    while (remainingTotal > 0 && itemsCreated < 3)
+                    if (maxQuantity > 0)
                     {
-                        var product = products[productIndex % products.Count];
-                        var maxQuantity = Math.Min(3, (int)(remainingTotal / product.Price));
-                        
-                        if (maxQuantity > 0)
-                        {
-                            var quantity = Math.Min(maxQuantity, new Random().Next(1, maxQuantity + 1));
-                            var price = product.Price * quantity;
-                            
-                            orderItems.Add(new OrderItems 
-                            { 
-                                OrderId = order.OrderId, 
-                                ProductId = product.Id, 
-                                Quantity = quantity, 
-                                Price = price 
-                            });
-                            
-                            remainingTotal -= price;
-                            itemsCreated++;
-                        }
-                        else
-                        {
-                            // If product price is too high, just add 1 item
-                            orderItems.Add(new OrderItems 
-                            { 
-                                OrderId = order.OrderId, 
-                                ProductId = product.Id, 
-                                Quantity = 1, 
-                                Price = product.Price 
-                            });
-                            remainingTotal -= product.Price;
-                            itemsCreated++;
-                        }
-                        
-                        productIndex++;
-                    }
-                }
-                else
-                {
-                    // For orders with 0 total price, add random items
-                    var itemCount = new Random().Next(1, 4);
-                    for (int i = 0; i < itemCount; i++)
-                    {
-                        var product = products[productIndex % products.Count];
-                        var quantity = new Random().Next(1, 4);
+                        var quantity = Math.Min(maxQuantity, new Random().Next(1, maxQuantity + 1));
                         var price = product.Price * quantity;
-
+                        
                         orderItems.Add(new OrderItems 
                         { 
                             OrderId = order.OrderId, 
@@ -310,32 +288,62 @@ namespace eHairdressers.Services.Database
                             Quantity = quantity, 
                             Price = price 
                         });
-
-                        productIndex++;
+                        
+                        remainingTotal -= price;
                     }
+                    else
+                    {
+                        // If product price is too high, just add 1 item
+                        orderItems.Add(new OrderItems 
+                        { 
+                            OrderId = order.OrderId, 
+                            ProductId = product.Id, 
+                            Quantity = 1, 
+                            Price = product.Price 
+                        });
+                        remainingTotal -= product.Price;
+                    }
+                    
+                    productIndex++;
                 }
             }
-
-            Console.WriteLine($"Created {orderItems.Count} order items");
 
             if (orderItems.Any())
             {
                 context.OrderItems.AddRange(orderItems);
                 await context.SaveChangesAsync();
-
-                // Update order total prices for orders that just got items
-                foreach (var order in ordersNeedingItems)
-                {
-                    var totalPrice = orderItems
-                        .Where(oi => oi.OrderId == order.OrderId)
-                        .Sum(oi => oi.Price);
-                    
-                    order.TotalPrice = totalPrice;
-                }
-                
-                await context.SaveChangesAsync();
-                Console.WriteLine("Successfully saved order items and updated total prices");
             }
+        }
+
+        public static async Task SeedPayments(eHairdressersContext context)
+        {
+            if (await context.Payments.AnyAsync())
+                return;
+
+            var orders = await context.Orders.Take(10).ToListAsync();
+            if (!orders.Any())
+                return;
+
+            var payments = new List<Payment>();
+            var paymentMethods = new[] { "Credit Card", "Cash", "Bank Transfer", "PayPal" };
+            var paymentStatuses = new[] { "Completed", "Pending", "Failed", "Refunded" };
+
+            foreach (var order in orders)
+            {
+                var payment = new Payment
+                {
+                    OrderId = order.OrderId,
+                    Amount = (decimal)order.TotalPrice,
+                    PaymentDate = order.OrderDate.AddHours(1), // Payment usually happens shortly after order
+                    PaymentMethod = paymentMethods[new Random().Next(paymentMethods.Length)],
+                    PaymentStatus = paymentStatuses[new Random().Next(paymentStatuses.Length)]
+                };
+
+                payments.Add(payment);
+            }
+
+            context.Payments.AddRange(payments);
+            await context.SaveChangesAsync();
         }
 
         public static async Task AssignDefaultRoleToUser(eHairdressersContext context, int userId, string roleName = "Customer")

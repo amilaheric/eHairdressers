@@ -18,6 +18,5 @@ namespace eHairdressers.Controllers
         {
             return base.Insert(insert);
         }
-
     }
 }

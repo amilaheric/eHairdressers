@@ -14,7 +14,7 @@ class UserAccountProvider extends BaseProvider<UserAccount> {
       print('User ID: $userId');
       
       var response = await http!.get(
-        Uri.parse('http://10.0.2.2:7052/api/UserAccount/$userId'),
+        Uri.parse('http://10.0.2.2:7051/api/UserAccount/$userId'),
         headers: createHeaders(),
       );
       
@@ -50,7 +50,7 @@ class UserAccountProvider extends BaseProvider<UserAccount> {
       print('User ID: $userId');
       
       var response = await http!.get(
-        Uri.parse('http://10.0.2.2:7052/api/UserAccount/Stats/$userId'),
+        Uri.parse('http://10.0.2.2:7051/api/UserAccount/Stats/$userId'),
         headers: createHeaders(),
       );
       
@@ -86,7 +86,7 @@ class UserAccountProvider extends BaseProvider<UserAccount> {
       print('User ID: $userId');
       
       var response = await http!.get(
-        Uri.parse('http://10.0.2.2:7052/api/UserAccount/LoyaltyBonuses/$userId'),
+        Uri.parse('http://10.0.2.2:7051/api/UserAccount/LoyaltyBonuses/$userId'),
         headers: createHeaders(),
       );
       
@@ -131,7 +131,7 @@ class UserAccountProvider extends BaseProvider<UserAccount> {
       print('User ID: ${userAccount.userId}');
       
       var response = await http!.put(
-        Uri.parse('http://10.0.2.2:7052/api/UserAccount/${userAccount.userId}'),
+        Uri.parse('http://10.0.2.2:7051/api/UserAccount/${userAccount.userId}'),
         headers: createHeaders(),
         body: json.encode(userAccount.toJson()),
       );
@@ -163,7 +163,7 @@ class UserAccountProvider extends BaseProvider<UserAccount> {
       };
       
       var response = await http!.post(
-        Uri.parse('http://10.0.2.2:7052/api/UserAccount/CalculatePoints'),
+        Uri.parse('http://10.0.2.2:7051/api/UserAccount/CalculatePoints'),
         headers: createHeaders(),
         body: json.encode(requestBody),
       );
@@ -203,7 +203,7 @@ class UserAccountProvider extends BaseProvider<UserAccount> {
       print('User ID: $userId');
       
       var response = await http!.get(
-        Uri.parse('http://10.0.2.2:7052/api/UserAccount/LoyaltyDiscount/$userId'),
+        Uri.parse('http://10.0.2.2:7051/api/UserAccount/LoyaltyDiscount/$userId'),
         headers: createHeaders(),
       );
       
@@ -240,7 +240,7 @@ class UserAccountProvider extends BaseProvider<UserAccount> {
       print('Bonus ID: $bonusId, User ID: $userId');
       
       var response = await http!.put(
-        Uri.parse('http://10.0.2.2:7052/api/UserAccount/RedeemBonus/$bonusId/$userId'),
+        Uri.parse('http://10.0.2.2:7051/api/UserAccount/RedeemBonus/$bonusId/$userId'),
         headers: createHeaders(),
       );
       
@@ -280,7 +280,7 @@ class UserAccountProvider extends BaseProvider<UserAccount> {
       print('User ID: $userId');
       
       var response = await http!.get(
-        Uri.parse('http://10.0.2.2:7052/api/UserAccount/Achievements/$userId'),
+        Uri.parse('http://10.0.2.2:7051/api/UserAccount/Achievements/$userId'),
         headers: createHeaders(),
       );
       
@@ -321,7 +321,7 @@ class UserAccountProvider extends BaseProvider<UserAccount> {
       print('Tier: $tier');
       
       var response = await http!.get(
-        Uri.parse('http://10.0.2.2:7052/api/UserAccount/LoyaltyBenefits/$tier'),
+        Uri.parse('http://10.0.2.2:7051/api/UserAccount/LoyaltyBenefits/$tier'),
         headers: createHeaders(),
       );
       
@@ -349,7 +349,7 @@ class UserAccountProvider extends BaseProvider<UserAccount> {
       print('User ID: $userId');
       
       var response = await http!.get(
-        Uri.parse('http://10.0.2.2:7052/api/UserAccount/ReferralInfo/$userId'),
+        Uri.parse('http://10.0.2.2:7051/api/UserAccount/ReferralInfo/$userId'),
         headers: createHeaders(),
       );
       
