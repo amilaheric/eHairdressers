@@ -381,10 +381,7 @@ namespace eHairdressers.Services.Database
             var employees = await context.Employees.Take(5).ToListAsync();
             var service = await context.Services.FirstAsync();
 
-            // Ensure we have enough data
-            if (users.Count < 3 || employees.Count < 5)
-                return; // Not enough data to create appointments
-
+        
             var appointments = new List<Appointment>
             {
                 new Appointment { UserId = users[0].UserId, EmployeeId = employees[0].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 7, 22), AppointmentTime = new TimeSpan(9, 0, 0), Approved = null, Comment = "First time visit" },
@@ -393,10 +390,7 @@ namespace eHairdressers.Services.Database
                 new Appointment { UserId = users[0].UserId, EmployeeId = employees[0].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 8, 17), AppointmentTime = new TimeSpan(16, 0, 0), Approved = false, Comment = "Evening appointment" },
                 new Appointment { UserId = users[0].UserId, EmployeeId = employees[1].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 8, 20), AppointmentTime = new TimeSpan(12, 0, 0), Approved = false, Comment = "Lunch time appointment" },
                 new Appointment { UserId = users[1].UserId, EmployeeId = employees[1].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = DateTime.Today.AddDays(1), AppointmentTime = new TimeSpan(14, 0, 0), Approved = null, Comment = "New customer" },
-                new Appointment { UserId = users[2].UserId, EmployeeId = employees[2].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = DateTime.Today.AddDays(2), AppointmentTime = new TimeSpan(16, 0, 0), Approved = null, Comment = "Special occasion" },
-                new Appointment { UserId = users[1].UserId, EmployeeId = employees[3].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = DateTime.Today.AddDays(3), AppointmentTime = new TimeSpan(11, 0, 0), Approved = null, Comment = "Regular customer" },
-                new Appointment { UserId = users[2].UserId, EmployeeId = employees[4].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = DateTime.Today.AddDays(4), AppointmentTime = new TimeSpan(15, 0, 0), Approved = null, Comment = "First time visit" }
-            };
+     };
 
             context.Appointments.AddRange(appointments);
             await context.SaveChangesAsync();
@@ -413,16 +407,16 @@ namespace eHairdressers.Services.Database
                 // Create new orders if none exist
                 var orders = new List<Orders>
                 {
-                    new Orders { UserId = users[0].UserId, OrderNumber = "ORD-001", TotalPrice = 280.0, OrderDate = new DateTime(2025, 1, 15, 14, 30, 0), Status = true },
-                    new Orders { UserId = users[0].UserId, OrderNumber = "ORD-002", TotalPrice = 165.0, OrderDate = new DateTime(2025, 1, 20, 16, 45, 0), Status = true },
-                    new Orders { UserId = users[1].UserId, OrderNumber = "ORD-003", TotalPrice = 200.0, OrderDate = new DateTime(2025, 1, 22, 11, 15, 0), Status = true },
-                    new Orders { UserId = users[1].UserId, OrderNumber = "ORD-004", TotalPrice = 150.0, OrderDate = new DateTime(2025, 1, 25, 13, 20, 0), Status = false },
-                    new Orders { UserId = users[2].UserId, OrderNumber = "ORD-005", TotalPrice = 320.0, OrderDate = new DateTime(2025, 1, 28, 15, 10, 0), Status = true },
-                    new Orders { UserId = users[2].UserId, OrderNumber = "ORD-006", TotalPrice = 180.0, OrderDate = new DateTime(2025, 2, 1, 10, 30, 0), Status = true },
-                    new Orders { UserId = users[3].UserId, OrderNumber = "ORD-007", TotalPrice = 95.0, OrderDate = new DateTime(2025, 2, 5, 17, 45, 0), Status = true },
-                    new Orders { UserId = users[3].UserId, OrderNumber = "ORD-008", TotalPrice = 250.0, OrderDate = new DateTime(2025, 2, 10, 12, 0, 0), Status = false },
-                    new Orders { UserId = users[4].UserId, OrderNumber = "ORD-009", TotalPrice = 175.0, OrderDate = new DateTime(2025, 2, 15, 14, 15, 0), Status = true },
-                    new Orders { UserId = users[0].UserId, OrderNumber = "ORD-010", TotalPrice = 300.0, OrderDate = new DateTime(2025, 2, 20, 16, 30, 0), Status = true }
+                    new Orders { UserId = users[0].UserId, OrderNumber = "ORD-001", TotalPrice = 280.0, OrderDate = new DateTime(2025, 8, 15, 14, 30, 0), Status = true },
+                    new Orders { UserId = users[0].UserId, OrderNumber = "ORD-002", TotalPrice = 165.0, OrderDate = new DateTime(2025, 8, 16, 16, 45, 0), Status = true },
+                    new Orders { UserId = users[1].UserId, OrderNumber = "ORD-003", TotalPrice = 200.0, OrderDate = new DateTime(2025, 8, 17, 11, 15, 0), Status = true },
+                    new Orders { UserId = users[1].UserId, OrderNumber = "ORD-004", TotalPrice = 150.0, OrderDate = new DateTime(2025, 8, 25, 13, 20, 0), Status = false },
+                    new Orders { UserId = users[2].UserId, OrderNumber = "ORD-005", TotalPrice = 320.0, OrderDate = new DateTime(2025, 8, 31, 15, 10, 0), Status = true },
+                    new Orders { UserId = users[2].UserId, OrderNumber = "ORD-006", TotalPrice = 180.0, OrderDate = new DateTime(2025, 8, 22, 10, 30, 0), Status = true },
+                    new Orders { UserId = users[3].UserId, OrderNumber = "ORD-007", TotalPrice = 95.0, OrderDate = new DateTime(2025, 8, 21, 17, 45, 0), Status = true },
+                    new Orders { UserId = users[3].UserId, OrderNumber = "ORD-008", TotalPrice = 250.0, OrderDate = new DateTime(2025, 8, 20, 12, 0, 0), Status = false },
+                    new Orders { UserId = users[4].UserId, OrderNumber = "ORD-009", TotalPrice = 175.0, OrderDate = new DateTime(2025, 8, 23, 14, 15, 0), Status = true },
+                    new Orders { UserId = users[0].UserId, OrderNumber = "ORD-010", TotalPrice = 300.0, OrderDate = new DateTime(2025, 8, 25, 16, 30, 0), Status = true }
                 };
 
                 context.Orders.AddRange(orders);
@@ -445,48 +439,26 @@ namespace eHairdressers.Services.Database
 
             // Add order items to orders that don't have them
             var orderItems = new List<OrderItems>();
-            var productIndex = 0;
+            var random = new Random();
 
             foreach (var order in ordersNeedingItems)
             {
                 // Create 1-3 items per order
-                var itemCount = new Random().Next(1, 4);
-                var remainingTotal = order.TotalPrice;
+                var itemCount = random.Next(1, 4);
                 
-                for (int i = 0; i < itemCount && remainingTotal > 0; i++)
+                for (int i = 0; i < itemCount; i++)
                 {
-                    var product = products[productIndex % products.Count];
-                    var maxQuantity = Math.Min(3, (int)(remainingTotal / product.Price));
+                    var product = products[i % products.Count];
+                    var quantity = random.Next(1, 4); // 1-3 items
+                    var price = product.Price * quantity;
                     
-                    if (maxQuantity > 0)
-                    {
-                        var quantity = Math.Min(maxQuantity, new Random().Next(1, maxQuantity + 1));
-                        var price = product.Price * quantity;
-                        
-                        orderItems.Add(new OrderItems 
-                        { 
-                            OrderId = order.OrderId, 
-                            ProductId = product.Id, 
-                            Quantity = quantity, 
-                            Price = price 
-                        });
-                        
-                        remainingTotal -= price;
-                    }
-                    else
-                    {
-                        // If product price is too high, just add 1 item
-                        orderItems.Add(new OrderItems 
-                        { 
-                            OrderId = order.OrderId, 
-                            ProductId = product.Id, 
-                            Quantity = 1, 
-                            Price = product.Price 
-                        });
-                        remainingTotal -= product.Price;
-                    }
-                    
-                    productIndex++;
+                    orderItems.Add(new OrderItems 
+                    { 
+                        OrderId = order.OrderId, 
+                        ProductId = product.Id, 
+                        Quantity = quantity, 
+                        Price = price 
+                    });
                 }
             }
 

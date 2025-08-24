@@ -35,7 +35,6 @@ class SalonOperationsReportProvider extends BaseProvider<SalonOperationsReport> 
       }
       
       var newCustomers = 0;
-      var returningCustomers = 0;
       
       for (var user in allUsers) {
         var userId = user.userId;
@@ -43,32 +42,20 @@ class SalonOperationsReportProvider extends BaseProvider<SalonOperationsReport> 
           var appointmentCount = customerAppointmentCounts[userId] ?? 0;
           if (appointmentCount == 1) {
             newCustomers++;
-          } else if (appointmentCount > 1) {
-            returningCustomers++;
           }
         }
       }
       
       var totalAppointments = allAppointments.length;
-      var completedAppointments = totalAppointments;
-      var cancelledAppointments = 0;
-      var noShowAppointments = 0;
       
-      var defaultPrice = 50.0;
-      var totalRevenue = totalAppointments * defaultPrice;
-      var averageAppointmentValue = totalAppointments > 0 ? totalRevenue / totalAppointments : 0.0;
+      // Revenue calculations removed
       
       return SalonOperationsReport(
         reportId: 1,
         reportDate: DateTime.now(),
         totalCustomers: totalCustomers,
         newCustomers: newCustomers,
-        returningCustomers: returningCustomers,
-        totalRevenue: totalRevenue,
-        completedAppointments: completedAppointments,
-        cancelledAppointments: cancelledAppointments,
-        noShowAppointments: noShowAppointments,
-        averageAppointmentValue: averageAppointmentValue,
+
         totalAppointments: totalAppointments,
         reportPeriod: "custom",
         startDate: startDate,
@@ -126,13 +113,7 @@ class SalonOperationsReportProvider extends BaseProvider<SalonOperationsReport> 
     }
   }
 
-  Future<SalonOperationsReport?> generateRevenueReport(DateTime startDate, DateTime endDate) async {
-    try {
-      return await _getReportData(startDate, endDate, 'revenue');
-    } catch (e) {
-      return await _getRealAppointmentData(startDate, endDate);
-    }
-  }
+
 
   Future<SalonOperationsReport?> generateAppointmentsReport(DateTime startDate, DateTime endDate) async {
     try {

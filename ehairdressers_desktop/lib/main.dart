@@ -88,7 +88,7 @@ class Login extends StatelessWidget {
             padding: const EdgeInsets.all(40.0),
             child: Column(children: [
               Image(
-                image: AssetImage('.dart_tool/assets/logo.png'),
+                image: AssetImage('assets/images/logo.png'),
                 height: 270,
                 width: 270,
               ),

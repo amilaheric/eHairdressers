@@ -28,7 +28,7 @@ class _EmployeeAddState extends State<EmployeeAdd> {
   Map<String, dynamic> _initialValue = {};
   late EmployeeProvider _employeeProvider;
   SearchResult<Employee>? employee;
-  String defaultImagePath = '.dart_tool/assets/default.jpg';
+  String defaultImagePath = 'assets/images/default.jpg';
 
   Future<void> pickImage() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(

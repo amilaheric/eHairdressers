@@ -29,21 +29,10 @@ namespace eHairdressers.Services
             var customerStats = await GetCustomerStatistics(request.StartDate, request.EndDate);
             report.TotalCustomers = customerStats.TotalCustomers;
             report.NewCustomers = customerStats.NewCustomers;
-            report.ReturningCustomers = customerStats.ReturningCustomers;
 
             
-            var appointmentStats = await GetAppointmentStatistics(request.StartDate, request.EndDate);
-            report.TotalAppointments = appointmentStats.TotalAppointments;
-            report.CompletedAppointments = appointmentStats.CompletedAppointments;
-            report.CancelledAppointments = appointmentStats.CancelledAppointments;
-            report.NoShowAppointments = appointmentStats.NoShowAppointments;
-
-            
-            var totalRevenue = await GetRevenueStatistics(request.StartDate, request.EndDate);
-            report.TotalRevenue = totalRevenue;
-            report.AverageAppointmentValue = appointmentStats.TotalAppointments > 0 
-                ? totalRevenue / appointmentStats.TotalAppointments 
-                : 0;
+            var totalAppointments = await GetAppointmentStatistics(request.StartDate, request.EndDate);
+            report.TotalAppointments = totalAppointments;
 
             
             report.DailyOperations = await GetDailyOperationsData(request.StartDate, request.EndDate);
@@ -90,12 +79,6 @@ namespace eHairdressers.Services
                 ReportDate = report.ReportDate,
                 TotalCustomers = report.TotalCustomers,
                 NewCustomers = report.NewCustomers,
-                ReturningCustomers = report.ReturningCustomers,
-                TotalRevenue = report.TotalRevenue,
-                CompletedAppointments = report.CompletedAppointments,
-                CancelledAppointments = report.CancelledAppointments,
-                NoShowAppointments = report.NoShowAppointments,
-                AverageAppointmentValue = report.AverageAppointmentValue,
                 TotalAppointments = report.TotalAppointments,
                 ReportPeriod = report.ReportPeriod,
                 StartDate = report.StartDate,
@@ -103,7 +86,7 @@ namespace eHairdressers.Services
             };
         }
 
-        private async Task<(int TotalCustomers, int NewCustomers, int ReturningCustomers)> GetCustomerStatistics(DateTime startDate, DateTime endDate)
+        private async Task<(int TotalCustomers, int NewCustomers)> GetCustomerStatistics(DateTime startDate, DateTime endDate)
         {
             
             var totalCustomers = await _context.Appointments
@@ -119,35 +102,19 @@ namespace eHairdressers.Services
                 .Where(g => g.Min(a => a.AppointmentDate) >= startDate)
                 .CountAsync();
 
-            var returningCustomers = totalCustomers - newCustomers;
-
-            return (totalCustomers, newCustomers, returningCustomers);
+            return (totalCustomers, newCustomers);
         }
 
-        private async Task<(int TotalAppointments, int CompletedAppointments, int CancelledAppointments, int NoShowAppointments)> GetAppointmentStatistics(DateTime startDate, DateTime endDate)
+        private async Task<int> GetAppointmentStatistics(DateTime startDate, DateTime endDate)
         {
-            var appointments = await _context.Appointments
+            var totalAppointments = await _context.Appointments
                 .Where(a => a.AppointmentDate >= startDate && a.AppointmentDate <= endDate)
-                .ToListAsync();
-
-            var totalAppointments = appointments.Count;
-            var completedAppointments = appointments.Count(a => a.Approved == true);
-            var cancelledAppointments = appointments.Count(a => a.Approved == false);
-            var noShowAppointments = appointments.Count(a => a.Approved == null);
-
-            return (totalAppointments, completedAppointments, cancelledAppointments, noShowAppointments);
-        }
-
-        private async Task<decimal> GetRevenueStatistics(DateTime startDate, DateTime endDate)
-        {
-            
-            
-            var completedAppointments = await _context.Appointments
-                .Where(a => a.AppointmentDate >= startDate && a.AppointmentDate <= endDate && a.Approved == true)
                 .CountAsync();
 
-            return completedAppointments * 50.00m; 
+            return totalAppointments;
         }
+
+
 
         private async Task<List<DailyOperationsData>> GetDailyOperationsData(DateTime startDate, DateTime endDate)
         {
@@ -163,10 +130,6 @@ namespace eHairdressers.Services
                 {
                     Date = g.Key,
                     Appointments = g.Count(),
-                    CompletedAppointments = g.Count(a => a.Approved == true),
-                    CancelledAppointments = g.Count(a => a.Approved == false),
-                    NoShowAppointments = g.Count(a => a.Approved == null),
-                    Revenue = g.Count(a => a.Approved == true) * 50.00m, // Default price per service
                     NewCustomers = g.Where(a => a.AppointmentDate == g.Min(ap => ap.AppointmentDate))
                                    .Select(a => a.UserId)
                                    .Distinct()
@@ -186,10 +149,6 @@ namespace eHairdressers.Services
                 {
                     Date = date,
                     Appointments = 0,
-                    CompletedAppointments = 0,
-                    CancelledAppointments = 0,
-                    NoShowAppointments = 0,
-                    Revenue = 0,
                     NewCustomers = 0
                 });
             }
@@ -219,7 +178,6 @@ namespace eHairdressers.Services
                     ServiceId = g.Key.ServiceId,
                     ServiceName = g.Key.ServiceName,
                     TotalBookings = g.Count(),
-                    TotalRevenue = g.Count(x => x.a.Approved == true) * 50.00m, 
                     CompletedBookings = g.Count(x => x.a.Approved == true),
                     AverageRating = (decimal)reviews
                         .Where(r => g.Any(x => x.a.AppointmentId == r.AppointmentId))
@@ -255,24 +213,16 @@ namespace eHairdressers.Services
                 ReportPeriod = report.ReportPeriod,
                 KeyMetrics = new
                 {
-                    TotalRevenue = report.TotalRevenue,
                     TotalAppointments = report.TotalAppointments,
-                    CompletionRate = report.TotalAppointments > 0 
-                        ? Math.Round((decimal)report.CompletedAppointments / report.TotalAppointments * 100, 2)
-                        : 0,
-                    AverageAppointmentValue = report.AverageAppointmentValue,
+                    CompletionRate = 0, // Removed appointment status tracking
                     CustomerGrowth = report.NewCustomers > 0 
                         ? Math.Round((decimal)report.NewCustomers / report.TotalCustomers * 100, 2)
                         : 0
                 },
                 PerformanceSummary = new
                 {
-                    CompletedAppointments = report.CompletedAppointments,
-                    CancelledAppointments = report.CancelledAppointments,
-                    NoShowAppointments = report.NoShowAppointments,
                     TotalCustomers = report.TotalCustomers,
-                    NewCustomers = report.NewCustomers,
-                    ReturningCustomers = report.ReturningCustomers
+                    NewCustomers = report.NewCustomers
                 }
             };
         }

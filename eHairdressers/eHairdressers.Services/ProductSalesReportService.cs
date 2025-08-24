@@ -19,7 +19,8 @@ namespace eHairdressers.Services
             var query = from oi in _context.OrderItems
                        join o in _context.Orders on oi.OrderId equals o.OrderId
                        join p in _context.Products on oi.ProductId equals p.Id
-                       where o.OrderDate >= request.StartDate && o.OrderDate <= request.EndDate
+                       where (request.StartDate == DateTime.MinValue || o.OrderDate >= request.StartDate) 
+                             && (request.EndDate == DateTime.MinValue || o.OrderDate <= request.EndDate)
                        group new { oi, o, p } by new { p.Id, p.Name, p.Code } into g
                        select new ProductSalesReport
                        {
@@ -58,7 +59,9 @@ namespace eHairdressers.Services
             var query = from oi in _context.OrderItems
                        join o in _context.Orders on oi.OrderId equals o.OrderId
                        join p in _context.Products on oi.ProductId equals p.Id
-                       where p.Id == productId && o.OrderDate >= request.StartDate && o.OrderDate <= request.EndDate
+                       where p.Id == productId 
+                             && (request.StartDate == DateTime.MinValue || o.OrderDate >= request.StartDate)
+                             && (request.EndDate == DateTime.MinValue || o.OrderDate <= request.EndDate)
                        group new { oi, o, p } by new { p.Id, p.Name, p.Code } into g
                        select new ProductSalesReport
                        {
@@ -94,7 +97,8 @@ namespace eHairdressers.Services
         {
             var summary = await (from oi in _context.OrderItems
                                 join o in _context.Orders on oi.OrderId equals o.OrderId
-                                where o.OrderDate >= request.StartDate && o.OrderDate <= request.EndDate
+                                where (request.StartDate == DateTime.MinValue || o.OrderDate >= request.StartDate)
+                                      && (request.EndDate == DateTime.MinValue || o.OrderDate <= request.EndDate)
                                 group new { oi, o } by 1 into g
                                 select new
                                 {
@@ -121,7 +125,9 @@ namespace eHairdressers.Services
         {
             var dailyData = await (from oi in _context.OrderItems
                                   join o in _context.Orders on oi.OrderId equals o.OrderId
-                                  where oi.ProductId == productId && o.OrderDate >= startDate && o.OrderDate <= endDate
+                                  where oi.ProductId == productId 
+                                        && (startDate == DateTime.MinValue || o.OrderDate >= startDate)
+                                        && (endDate == DateTime.MinValue || o.OrderDate <= endDate)
                                   group new { oi, o } by o.OrderDate.Date into g
                                   select new DailySalesData
                                   {

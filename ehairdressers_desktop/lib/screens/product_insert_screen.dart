@@ -32,7 +32,7 @@ class _ProductInsertState extends State<ProductInsert> {
   late ProductCategoryProvider _categoryProvider;
   SearchResult<Brand>? brandResult;
   SearchResult<ProductCategory>? categoryResult;
-  String defaultImagePath = '.dart_tool/assets/default.jpg';
+  String defaultImagePath = 'assets/images/default.jpg';
 
   @override
   void initState() {

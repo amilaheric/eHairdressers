@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using eHairdressers.Model;
 using eHairdressers.Model.Requests;
 using eHairdressers.Model.SearchObjects;
 using eHairdressers.Services.Database;
@@ -57,7 +58,7 @@ namespace eHairdressers.Services
             entity.Approved = false;
         }
 
-        public override IQueryable<Appointment> AddInclude(IQueryable<Appointment> query, AppointmentsSearchObject? search = null)
+        public override IQueryable<Database.Appointment> AddInclude(IQueryable<Database.Appointment> query, AppointmentsSearchObject? search = null)
         {
             query = query.Include(a => a.Employee)
                .Include(a => a.Service)
@@ -66,21 +67,50 @@ namespace eHairdressers.Services
             return base.AddInclude(query, search);
         }
 
-        public override IQueryable<Appointment> AddFilter(IQueryable<Appointment> query, AppointmentsSearchObject? search = null)
+        public override IQueryable<Database.Appointment> AddFilter(IQueryable<Database.Appointment> query, AppointmentsSearchObject? search = null)
         {
-          
-                var filteredQuery = base.AddFilter(query, search);
+           
+            
+            var filteredQuery = base.AddFilter(query, search);
+        
 
-                if (search?.AppointmentDate != null)
-                {
+            if (search?.AppointmentDate != null && search.AppointmentDate != DateTime.MinValue)
+            {
                 DateTime searchDate = search.AppointmentDate.Date;
-
                 filteredQuery = filteredQuery.Where(x => x.AppointmentDate.Date == searchDate);
-
+            
             }
 
             return filteredQuery;
+        }
+
+        public override async Task<PageResult<Model.Appointment>> Get(AppointmentsSearchObject? search = null)
+        {
+          
             
+            var query = _context.Set<Database.Appointment>().AsQueryable();
+
+            var result = new PageResult<Model.Appointment>();
+
+            query = AddFilter(query, search);
+       
+            
+            query = AddInclude(query, search);
+         
+
+            result.Count = await query.CountAsync();
+          
+
+            if (search?.Page.HasValue == true && search?.PageSize.HasValue == true) {
+                query = query.Take(search.PageSize.Value).Skip(search.Page.Value * search.PageSize.Value);
+            }
+
+            var list = await query.ToListAsync();
+
+            var tmp = _mapper.Map<List<Model.Appointment>>(list);
+            
+            result.Result = tmp;
+            return result;
         }
 
         public async Task<List<TimeSpan>> GetAvailableTimes(DateTime date)

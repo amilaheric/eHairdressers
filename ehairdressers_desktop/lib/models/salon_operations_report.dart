@@ -16,23 +16,13 @@ class SalonOperationsReport {
   @JsonKey(name: 'NewCustomers')
   int? newCustomers;
   
-  @JsonKey(name: 'ReturningCustomers')
-  int? returningCustomers;
+
   
-  @JsonKey(name: 'TotalRevenue')
-  double? totalRevenue;
+
   
-  @JsonKey(name: 'CompletedAppointments')
-  int? completedAppointments;
+
   
-  @JsonKey(name: 'CancelledAppointments')
-  int? cancelledAppointments;
-  
-  @JsonKey(name: 'NoShowAppointments')
-  int? noShowAppointments;
-  
-  @JsonKey(name: 'AverageAppointmentValue')
-  double? averageAppointmentValue;
+
   
   @JsonKey(name: 'TotalAppointments')
   int? totalAppointments;
@@ -58,12 +48,10 @@ class SalonOperationsReport {
     this.reportDate,
     this.totalCustomers,
     this.newCustomers,
-    this.returningCustomers,
-    this.totalRevenue,
-    this.completedAppointments,
-    this.cancelledAppointments,
-    this.noShowAppointments,
-    this.averageAppointmentValue,
+
+
+
+
     this.totalAppointments,
     this.reportPeriod,
     this.startDate,
@@ -85,7 +73,7 @@ class SalonReportRequest {
   DateTime endDate;
   
   @JsonKey(name: 'reportType')
-  String reportType; // 'operations', 'customer', 'revenue', 'appointments'
+  String reportType; // 'operations', 'customer', 'appointments'
 
   SalonReportRequest({
     required this.startDate,

@@ -21,14 +21,14 @@ class _SalonOperationsReportScreenState extends State<SalonOperationsReportScree
   final List<String> _reportTypes = [
     'operations',
     'customer',
-    'revenue',
+
     'appointments',
   ];
 
   final Map<String, String> _reportTypeLabels = {
     'operations': 'Operations Overview',
     'customer': 'Customer Analysis',
-    'revenue': 'Revenue Report',
+    
     'appointments': 'Appointments Summary',
   };
 
@@ -53,9 +53,7 @@ class _SalonOperationsReportScreenState extends State<SalonOperationsReportScree
         case 'customer':
           reportData = await _reportProvider.generateCustomerReport(_startDate, _endDate);
           break;
-        case 'revenue':
-          reportData = await _reportProvider.generateRevenueReport(_startDate, _endDate);
-          break;
+
         case 'appointments':
           reportData = await _reportProvider.generateAppointmentsReport(_startDate, _endDate);
           break;
@@ -287,23 +285,21 @@ class _SalonOperationsReportScreenState extends State<SalonOperationsReportScree
       metrics.addAll([
         _buildMetricCard('Total Customers', '${_reportData!.totalCustomers ?? 0}', Icons.people, Colors.blue),
         _buildMetricCard('New Customers', '${_reportData!.newCustomers ?? 0}', Icons.person_add, Colors.green),
-        _buildMetricCard('Returning Customers', '${_reportData!.returningCustomers ?? 0}', Icons.person, Colors.orange),
+        
       ]);
     }
     
-    if (_selectedReportType == 'operations' || _selectedReportType == 'revenue') {
+          if (_selectedReportType == 'operations') {
       metrics.addAll([
-        _buildMetricCard('Total Revenue', '\$${_reportData!.totalRevenue?.toStringAsFixed(2) ?? '0.00'}', Icons.attach_money, Colors.green),
-        _buildMetricCard('Avg. Appointment Value', '\$${_reportData!.averageAppointmentValue?.toStringAsFixed(2) ?? '0.00'}', Icons.assessment, Colors.purple),
+
+        
       ]);
     }
     
     if (_selectedReportType == 'operations' || _selectedReportType == 'appointments') {
       metrics.addAll([
         _buildMetricCard('Total Appointments', '${_reportData!.totalAppointments ?? 0}', Icons.calendar_today, Colors.indigo),
-        _buildMetricCard('Completed', '${_reportData!.completedAppointments ?? 0}', Icons.check_circle, Colors.green),
-        _buildMetricCard('Cancelled', '${_reportData!.cancelledAppointments ?? 0}', Icons.cancel, Colors.red),
-        _buildMetricCard('No Shows', '${_reportData!.noShowAppointments ?? 0}', Icons.no_accounts, Colors.orange),
+        
       ]);
     }
 
@@ -356,11 +352,10 @@ class _SalonOperationsReportScreenState extends State<SalonOperationsReportScree
 
   Widget _buildDetailedBreakdown() {
     if (_selectedReportType == 'operations' && _reportData != null) {
-      // Calculate returning customers from available data
-      final totalCustomers = _reportData!.totalCustomers ?? 0;
-      final totalAppointments = _reportData!.totalAppointments ?? 0;
-      final completedAppointments = _reportData!.completedAppointments ?? 0;
-      final totalRevenue = _reportData!.totalRevenue ?? 0.0;
+             // Calculate returning customers from available data
+       final totalCustomers = _reportData!.totalCustomers ?? 0;
+       final totalAppointments = _reportData!.totalAppointments ?? 0;
+
       
       // Estimate returning customers (customers with multiple appointments)
       // This is a simplified calculation - in reality, you'd need appointment history per customer
@@ -380,10 +375,9 @@ class _SalonOperationsReportScreenState extends State<SalonOperationsReportScree
           SizedBox(height: 16),
           if (totalCustomers > 0) _buildBreakdownRow('Customer Retention Rate', 
             '${((estimatedReturningCustomers / totalCustomers) * 100).toStringAsFixed(1)}%'),
-          if (totalAppointments > 0) _buildBreakdownRow('Appointment Completion Rate', 
-            '${((completedAppointments / totalAppointments) * 100).toStringAsFixed(1)}%'),
+          
           if (totalCustomers > 0) _buildBreakdownRow('Revenue per Customer', 
-            '\$${(totalRevenue / totalCustomers).toStringAsFixed(2)}'),
+            'N/A'),
           if (totalAppointments > 0) _buildBreakdownRow('Average Appointments per Customer', 
             '${(totalAppointments / totalCustomers).toStringAsFixed(1)}'),
         ],
@@ -427,7 +421,7 @@ class _SalonOperationsReportScreenState extends State<SalonOperationsReportScree
             ),
             SizedBox(height: 8),
             Text(
-              'Generate comprehensive reports on customers, revenue, and appointments',
+              'Generate comprehensive reports on customers and appointments',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: Colors.grey[600],
               ),
