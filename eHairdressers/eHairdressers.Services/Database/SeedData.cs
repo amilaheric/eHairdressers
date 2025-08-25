@@ -9,21 +9,19 @@ namespace eHairdressers.Services.Database
         {
             try
             {
-                Console.WriteLine($"Attempting to load image from: {imagePath}");
-                Console.WriteLine($"Current directory: {Directory.GetCurrentDirectory()}");
+              
                 
                 if (File.Exists(imagePath))
                 {
-                    Console.WriteLine($"File exists! Reading bytes...");
+                   
                     var bytes = File.ReadAllBytes(imagePath);
-                    Console.WriteLine($"Successfully read {bytes.Length} bytes from {imagePath}");
+                    
                     return bytes;
                 }
                 else
                 {
-                    Console.WriteLine($"File does not exist: {imagePath}");
                     
-                    // Try alternative paths for Docker
+                 
                     var alternativePaths = new[]
                     {
                         Path.Combine("wwwroot", "images", "products", "serum2.jpg"),
@@ -34,12 +32,11 @@ namespace eHairdressers.Services.Database
                     
                     foreach (var altPath in alternativePaths)
                     {
-                        Console.WriteLine($"Trying alternative path: {altPath}");
+                       
                         if (File.Exists(altPath))
                         {
-                            Console.WriteLine($"Found file at: {altPath}");
                             var bytes = File.ReadAllBytes(altPath);
-                            Console.WriteLine($"Successfully read {bytes.Length} bytes from {altPath}");
+                        
                             return bytes;
                         }
                     }
@@ -48,8 +45,7 @@ namespace eHairdressers.Services.Database
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error loading image {imagePath}: {ex.Message}");
-                Console.WriteLine($"Exception details: {ex}");
+            
                 return null;
             }
         }
@@ -58,60 +54,36 @@ namespace eHairdressers.Services.Database
         {
             try
             {
-                Console.WriteLine("Starting database seeding...");
-                
-                // Clear existing data first to ensure clean seed
-                Console.WriteLine("Clearing existing data...");
                 await ClearExistingData(context);
-                Console.WriteLine("Existing data cleared successfully.");
-                
-                Console.WriteLine("Seeding roles...");
+         
                 await SeedRoles(context);
-                Console.WriteLine("Roles seeded successfully.");
                 
-                Console.WriteLine("Seeding categories...");
                 await SeedCategories(context);
-                Console.WriteLine("Categories seeded successfully.");
-                
-                Console.WriteLine("Seeding brands...");
+               
                 await SeedBrands(context);
-                Console.WriteLine("Brands seeded successfully.");
-                
-                Console.WriteLine("Seeding services...");
+              
                 await SeedServices(context);
-                Console.WriteLine("Services seeded successfully.");
-                
-                Console.WriteLine("Seeding users...");
+            
                 await SeedUsers(context);
-                Console.WriteLine("Users seeded successfully.");
-                
-                Console.WriteLine("Seeding employees...");
+        
                 await SeedEmployees(context);
-                Console.WriteLine("Employees seeded successfully.");
-                
-                Console.WriteLine("Seeding products...");
+        
                 await SeedProducts(context);
-                Console.WriteLine("Products seeded successfully.");
-                
-                Console.WriteLine("Seeding appointments...");
+   
                 await SeedSampleAppointments(context);
-                Console.WriteLine("Appointments seeded successfully.");
-                
-                Console.WriteLine("Seeding orders...");
+             
+             
                 await SeedSampleOrders(context);
-                Console.WriteLine("Orders seeded successfully.");
+            
                 
-                Console.WriteLine("Seeding payments...");
+      
                 await SeedPayments(context);
-                Console.WriteLine("Payments seeded successfully.");
-                
-                Console.WriteLine("Database seeding completed successfully!");
+             
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error during database seeding: {ex.Message}");
-                Console.WriteLine($"Stack trace: {ex.StackTrace}");
-                throw; // Re-throw to prevent silent failures
+                
+                throw; 
             }
         }
 
@@ -119,48 +91,53 @@ namespace eHairdressers.Services.Database
         {
             try
             {
-                Console.WriteLine("Clearing UserRole table...");
+                
                 context.UserRole.RemoveRange(await context.UserRole.ToListAsync());
                 
-                Console.WriteLine("Clearing Employees table...");
+                
                 context.Employees.RemoveRange(await context.Employees.ToListAsync());
                 
-                Console.WriteLine("Clearing Appointments table...");
+                
                 context.Appointments.RemoveRange(await context.Appointments.ToListAsync());
                 
-                Console.WriteLine("Clearing OrderItems table...");
+                
                 context.OrderItems.RemoveRange(await context.OrderItems.ToListAsync());
                 
-                Console.WriteLine("Clearing Orders table...");
+                
                 context.Orders.RemoveRange(await context.Orders.ToListAsync());
                 
-                Console.WriteLine("Clearing Payments table...");
+                
                 context.Payments.RemoveRange(await context.Payments.ToListAsync());
                 
-                Console.WriteLine("Clearing Products table...");
+                
                 context.Products.RemoveRange(await context.Products.ToListAsync());
                 
-                Console.WriteLine("Clearing Services table...");
+                
                 context.Services.RemoveRange(await context.Services.ToListAsync());
                 
-                Console.WriteLine("Clearing User table...");
+                
                 context.User.RemoveRange(await context.User.ToListAsync());
                 
-                Console.WriteLine("Clearing Role table...");
+                context.ChatRoomUsers.RemoveRange(await context.ChatRoomUsers.ToListAsync());
+                
+                context.ChatRooms.RemoveRange(await context.ChatRooms.ToListAsync());
+                
+                context.Messages.RemoveRange(await context.Messages.ToListAsync());     
+
                 context.Role.RemoveRange(await context.Role.ToListAsync());
                 
-                Console.WriteLine("Clearing Category table...");
+                
                 context.Category.RemoveRange(await context.Category.ToListAsync());
                 
-                Console.WriteLine("Clearing Brand table...");
+                
                 context.Brand.RemoveRange(await context.Brand.ToListAsync());
                 
                 await context.SaveChangesAsync();
-                Console.WriteLine("All existing data cleared successfully.");
+               
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error clearing existing data: {ex.Message}");
+               
                 throw;
             }
         }
@@ -268,7 +245,7 @@ namespace eHairdressers.Services.Database
             context.User.AddRange(users);
             await context.SaveChangesAsync();
 
-            // Don't assign roles here - we'll do it after creating employees
+            
         }
 
         public static async Task SeedEmployees(eHairdressersContext context)
@@ -276,7 +253,7 @@ namespace eHairdressers.Services.Database
             if (await context.Employees.AnyAsync())
                 return;
 
-            // Get users to link employees to
+            
             var users = await context.User.ToListAsync();
             
             var employees = new List<Employees>
@@ -288,31 +265,31 @@ namespace eHairdressers.Services.Database
             context.Employees.AddRange(employees);
             await context.SaveChangesAsync();
 
-            // Now immediately populate the UserRole table
+            
             await PopulateUserRolesBasedOnEmployees(context);
         }
 
         public static async Task PopulateUserRolesBasedOnEmployees(eHairdressersContext context)
         {
-            // Get all users
+
             var users = await context.User.ToListAsync();
             
-            // Get all employee user IDs
+            
             var employeeUserIds = await context.Employees
                 .Select(e => e.UserId)
                 .ToListAsync();
 
             foreach (var user in users)
             {
-                // Check if user is an employee
+                
                 if (employeeUserIds.Contains(user.UserId))
                 {
-                    // User is an employee - assign Employee role (role ID 2)
+                    
                     await AssignDefaultRoleToUser(context, user.UserId, "Employee");
                 }
                 else
                 {
-                    // User is not an employee - assign Customer role (role ID 1)
+                    
                     await AssignDefaultRoleToUser(context, user.UserId, "Customer");
                 }
             }
@@ -326,14 +303,14 @@ namespace eHairdressers.Services.Database
             var category = await context.Category.FirstAsync();
             var brand = await context.Brand.FirstAsync();
 
-            // Load all product images as bytes from files
+            
             var serumImageBytes = LoadImageAsBytes("wwwroot/images/products/serum2.jpg");
             var samponImageBytes = LoadImageAsBytes("wwwroot/images/products/sampon.webp");
             var uljeImageBytes = LoadImageAsBytes("wwwroot/images/products/ulje.jpg");
             var regeneratorImageBytes = LoadImageAsBytes("wwwroot/images/products/regenerator.jpg");
             var kupkaImageBytes = LoadImageAsBytes("wwwroot/images/products/kupka.jpg");
 
-            // Log image loading results
+
             if (serumImageBytes != null)
                 Console.WriteLine($"Successfully loaded serum image. Size: {serumImageBytes.Length} bytes");
             else
@@ -404,7 +381,7 @@ namespace eHairdressers.Services.Database
 
             if (!existingOrders.Any())
             {
-                // Create new orders if none exist
+                
                 var orders = new List<Orders>
                 {
                     new Orders { UserId = users[0].UserId, OrderNumber = "ORD-001", TotalPrice = 280.0, OrderDate = new DateTime(2025, 8, 15, 14, 30, 0), Status = true },
@@ -424,7 +401,7 @@ namespace eHairdressers.Services.Database
                 existingOrders = orders;
             }
 
-            // Check which orders already have items
+            
             var ordersWithItems = await context.OrderItems
                 .Select(oi => oi.OrderId)
                 .Distinct()
@@ -435,21 +412,21 @@ namespace eHairdressers.Services.Database
                 .ToList();
 
             if (!ordersNeedingItems.Any())
-                return; // All orders already have items
+                return; 
 
-            // Add order items to orders that don't have them
+            
             var orderItems = new List<OrderItems>();
             var random = new Random();
 
             foreach (var order in ordersNeedingItems)
             {
-                // Create 1-3 items per order
+                
                 var itemCount = random.Next(1, 4);
                 
                 for (int i = 0; i < itemCount; i++)
                 {
                     var product = products[i % products.Count];
-                    var quantity = random.Next(1, 4); // 1-3 items
+                    var quantity = random.Next(1, 4);                       
                     var price = product.Price * quantity;
                     
                     orderItems.Add(new OrderItems 
@@ -488,7 +465,7 @@ namespace eHairdressers.Services.Database
                 {
                     OrderId = order.OrderId,
                     Amount = (decimal)order.TotalPrice,
-                    PaymentDate = order.OrderDate.AddHours(1), // Payment usually happens shortly after order
+                    PaymentDate = order.OrderDate.AddHours(1), 
                     PaymentMethod = paymentMethods[new Random().Next(paymentMethods.Length)],
                     PaymentStatus = paymentStatuses[new Random().Next(paymentStatuses.Length)]
                 };
@@ -506,13 +483,13 @@ namespace eHairdressers.Services.Database
             if (role == null)
                 return;
 
-            // Check if user already has any roles
+            
             var existingUserRole = await context.UserRole
                 .FirstOrDefaultAsync(ur => ur.UserId == userId);
 
             if (existingUserRole != null)
             {
-                // Update existing role if it's different
+                
                 if (existingUserRole.RoleId != role.RoleId)
                 {
                     existingUserRole.RoleId = role.RoleId;
@@ -522,7 +499,7 @@ namespace eHairdressers.Services.Database
             }
             else
             {
-                // Create new role assignment
+                
                 var userRole = new UserRole
                 {
                     UserId = userId,
