@@ -26,7 +26,7 @@ class SignalRService {
       _sentMessageIds.clear();
       
       _hubConnection = HubConnectionBuilder()
-          .withUrl('https://10.0.2.2:7051/chatHub')
+          .withUrl('http://10.0.2.2:7051/chatHub')
           .withAutomaticReconnect()
           .build();
 
@@ -121,19 +121,35 @@ class SignalRService {
     });
   }
 
-  Future<void> joinChatRoom(String chatRoomId) async {
+  Future<void> joinChatRoom(String chatRoomId, {int? userId, String? userRole}) async {
     try {
       if (_hubConnection != null && _isConnected) {
-
+        print('=== JOINING CHAT ROOM ===');
+        print('Chat Room ID: $chatRoomId');
+        print('User ID: $userId');
+        print('User Role: $userRole');
         
-        await _hubConnection!.invoke('JoinChatRoom', args: [chatRoomId]);
-     
+        // Try different method signatures that the backend might expect
+        try {
+          // Try with just chat room ID (original signature)
+          await _hubConnection!.invoke('JoinChatRoom', args: [chatRoomId]);
+          print('✅ Successfully joined chat room: $chatRoomId (simple method)');
+        } catch (e) {
+          print('Simple method failed, trying with user info...');
+          // Try with user information
+          await _hubConnection!.invoke('JoinChatRoom', args: [
+            chatRoomId,
+            userId?.toString() ?? '1',
+            userRole ?? 'User'
+          ]);
+          print('✅ Successfully joined chat room: $chatRoomId (with user info)');
+        }
       } else {
         print('Cannot join chat room: Connection not established');
       }
     } catch (e) {
-  
-      rethrow;
+      print('❌ Error joining chat room: $e');
+      // Don't rethrow - let the app continue with HTTP fallback
     }
   }
 

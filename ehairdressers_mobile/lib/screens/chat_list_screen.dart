@@ -45,11 +45,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
         _isLoading = true;
       });
 
-      print('=== LOADING CHAT ROOMS ===');
+      print('=== LOADING ALL AVAILABLE CHAT ROOMS ===');
       
-      // Get chat rooms for the user
-      var chatRooms = await _chatProvider.getUserChatRooms(widget.userId);
-      print('Found ${chatRooms.length} chat rooms');
+      // Get all available chat rooms (not just user-specific ones)
+      var chatRooms = await _chatProvider.getAllAvailableChatRooms();
+      print('Found ${chatRooms.length} available chat rooms');
       
       // Get unread message count
       var unreadCount = await _chatProvider.getUnreadMessageCount(widget.userId);
@@ -77,59 +77,98 @@ class _ChatListScreenState extends State<ChatListScreen> {
   }
 
   void _navigateToChat(ChatRoom chatRoom) async {
-    final result = await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => ChatScreen(
-          chatRoom: chatRoom,
-          userId: widget.userId,
+    try {
+      // Add current user to the chat room if they're not already there
+      if (chatRoom.chatRoomId != null) {
+        print('🔄 Adding user to chat room: ${chatRoom.chatRoomId}');
+        await _chatProvider.addUserToChatRoom(chatRoom.chatRoomId!, Authorization.currentUserId);
+      }
+      
+      final result = await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => ChatScreen(
+            chatRoom: chatRoom,
+            userId: widget.userId,
+          ),
         ),
-      ),
-    );
-    
-    // If we returned from chat screen, refresh the list
-    if (result == true) {
-      print('🔄 Returning from chat, refreshing chat rooms...');
-      await _loadChatRooms();
+      );
+      
+      // If we returned from chat screen, refresh the list
+      if (result == true) {
+        print('🔄 Returning from chat, refreshing chat rooms...');
+        await _loadChatRooms();
+      }
+    } catch (e) {
+      print('Error joining chat room: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error joining chat room: $e'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
     }
   }
 
   void _startNewChat() async {
     try {
-      print('=== STARTING ROLE-BASED CHAT ===');
+      print('=== CREATING NEW CHAT ROOM ===');
       
-             // Use actual logged-in user ID
-       int actualUserId = Authorization.currentUserId;
+      // Use actual logged-in user ID
+      int actualUserId = Authorization.currentUserId;
       
       print('🔄 ACTUAL USER INFO ===');
       print('User ID: $actualUserId');
-             print('User ID: $actualUserId');
       
-      // Create a role-based chat room
-      var roleBasedChatRoom = ChatRoom(
-        chatRoomId: 1, // Use chat room 1 for customer-employee communication
+      // Create a new chat room with a unique name
+      var timestamp = DateTime.now().millisecondsSinceEpoch;
+      var roomName = 'Chat Room ${timestamp}';
+      
+      var newChatRoom = ChatRoom(
+        chatRoomId: null, // This will trigger chat room creation
         userId: actualUserId,
         salonId: 1,
-        roomName: 'Customer Support Chat',
-        name: 'Customer Support Chat',
+        roomName: roomName,
+        name: roomName,
         createdDate: DateTime.now().toIso8601String(),
         isActive: true,
       );
       
-      print('🔄 JOINING ROLE-BASED CHAT ROOM: ${roleBasedChatRoom.chatRoomId}');
+      print('🔄 CREATING NEW CHAT ROOM');
       print('🔄 USER ID: $actualUserId');
-      print('🔄 ROOM NAME: ${roleBasedChatRoom.roomName}');
+      print('🔄 ROOM NAME: ${newChatRoom.roomName}');
       
-      // Navigate to the role-based chat room
-      _navigateToChat(roleBasedChatRoom);
+      // Create the chat room in the database
+      var createdRoom = await _chatProvider.createChatRoom(newChatRoom);
+      
+      if (createdRoom != null) {
+        print('✅ Chat room created successfully: ${createdRoom.chatRoomId}');
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('New chat room created!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        
+        // Navigate to the chat room
+        _navigateToChat(createdRoom);
+        
+        // Refresh the chat room list
+        await _loadChatRooms();
+      } else {
+        throw Exception('Failed to create chat room');
+      }
       
     } catch (e) {
-      print('Error starting role-based chat: $e');
+      print('Error creating new chat: $e');
       
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error starting chat: $e'),
+              content: Text('Error creating chat room: $e'),
               backgroundColor: Colors.red,
               duration: Duration(seconds: 3),
             ),
@@ -143,6 +182,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
     var lastMessageDate = chatRoom.lastMessageDate != null 
         ? DateTime.tryParse(chatRoom.lastMessageDate!) 
         : null;
+    var createdDate = chatRoom.createdDate != null 
+        ? DateTime.tryParse(chatRoom.createdDate!) 
+        : null;
     
     return Card(
       margin: EdgeInsets.symmetric(vertical: 4, horizontal: 16),
@@ -155,40 +197,69 @@ class _ChatListScreenState extends State<ChatListScreen> {
           ),
         ),
         title: Text(
-          chatRoom.roomName ?? 'Chat with Salon',
+          chatRoom.name ?? chatRoom.roomName ?? 'Chat Room',
           style: TextStyle(
             fontWeight: chatRoom.unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
           ),
         ),
-                 subtitle: Column(
-           crossAxisAlignment: CrossAxisAlignment.start,
-           mainAxisSize: MainAxisSize.min,
-           children: [
-             if (chatRoom.lastMessage != null) ...[
-               Flexible(
-                 child: Text(
-                   chatRoom.lastMessage!,
-                   maxLines: 2,
-                   overflow: TextOverflow.ellipsis,
-                   style: TextStyle(
-                     color: chatRoom.unreadCount > 0 ? Colors.black87 : Colors.grey[600],
-                     fontWeight: chatRoom.unreadCount > 0 ? FontWeight.w500 : FontWeight.normal,
-                   ),
-                 ),
-               ),
-             ],
-             if (lastMessageDate != null) ...[
-               SizedBox(height: 2),
-               Text(
-                 DateFormat('MMM dd, HH:mm').format(lastMessageDate),
-                 style: TextStyle(
-                   fontSize: 12,
-                   color: Colors.grey[500],
-                 ),
-               ),
-             ],
-           ],
-         ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (chatRoom.lastMessage != null) ...[
+              Flexible(
+                child: Text(
+                  chatRoom.lastMessage!,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: chatRoom.unreadCount > 0 ? Colors.black87 : Colors.grey[600],
+                    fontWeight: chatRoom.unreadCount > 0 ? FontWeight.w500 : FontWeight.normal,
+                  ),
+                ),
+              ),
+            ],
+            SizedBox(height: 2),
+            Row(
+              children: [
+                if (lastMessageDate != null) ...[
+                  Text(
+                    'Last: ${DateFormat('MMM dd, HH:mm').format(lastMessageDate)}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ] else if (createdDate != null) ...[
+                  Text(
+                    'Created: ${DateFormat('MMM dd, HH:mm').format(createdDate)}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ],
+                Spacer(),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.green.withOpacity(0.3)),
+                  ),
+                  child: Text(
+                    'Join',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.green[700],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
         trailing: chatRoom.unreadCount > 0
             ? Container(
                 padding: EdgeInsets.all(6),
@@ -222,28 +293,28 @@ class _ChatListScreenState extends State<ChatListScreen> {
             color: Colors.grey[400],
           ),
           SizedBox(height: 16),
-                     Text(
-             'Customer Support Chat',
-             style: TextStyle(
-               fontSize: 18,
-               fontWeight: FontWeight.bold,
-               color: Colors.grey[600],
-             ),
-           ),
-           SizedBox(height: 8),
-           Text(
-             'Chat with customer support for\nassistance and inquiries.',
-             textAlign: TextAlign.center,
-             style: TextStyle(
-               fontSize: 14,
-               color: Colors.grey[500],
-             ),
-           ),
+          Text(
+            'No Chat Rooms Available',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[600],
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Create a new chat room to start\ncommunicating with customers and employees.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[500],
+            ),
+          ),
           SizedBox(height: 24),
-                     ElevatedButton.icon(
-             onPressed: _startNewChat,
-             icon: Icon(Icons.chat),
-             label: Text('Start Support Chat'),
+          ElevatedButton.icon(
+            onPressed: _startNewChat,
+            icon: Icon(Icons.add),
+            label: Text('Create New Chat Room'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.orange,
               foregroundColor: Colors.white,
@@ -258,7 +329,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
   @override
   Widget build(BuildContext context) {
     return MasterScreenWidget(
-      title: "Live Chat",
+      title: "Chat Rooms",
       userId: widget.userId,
       showFloatingChat: false, // Disable floating chat on chat screen
       actions: [
@@ -268,12 +339,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
             print('🔄 Manual refresh triggered');
             await _loadChatRooms();
           },
-          tooltip: 'Refresh chats',
+          tooltip: 'Refresh chat rooms',
         ),
         IconButton(
-          icon: Icon(Icons.chat),
+          icon: Icon(Icons.add),
           onPressed: _startNewChat,
-          tooltip: 'Start new chat',
+          tooltip: 'Create new chat room',
         ),
         IconButton(
           icon: Icon(Icons.info_outline),
@@ -290,7 +361,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 children: [
                   CircularProgressIndicator(),
                   SizedBox(height: 16),
-                  Text('Loading chat conversations...'),
+                  Text('Loading chat rooms...'),
                 ],
               ),
             )

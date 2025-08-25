@@ -24,7 +24,7 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
   final _formKey = GlobalKey<FormBuilderState>();
   Map<String, dynamic> _initialValue = {};
   bool isLoading = true;
-  String defaultImagePath = '.dart_tool/assets/logo.png';
+  String defaultImagePath = '/assets/images/logo.png';
   late ServiceProvider _serviceProvider;
   late UserProvider _userProvider;
   late EmployeesProvider _employeesProvider;

@@ -31,6 +31,8 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isSending = false;
   bool _isTyping = false;
   bool _showTypingIndicator = false;
+  bool _hasChatRoom = false;
+  int? _currentChatRoomId;
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   StreamSubscription<Message>? _messageSubscription;
@@ -39,23 +41,41 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    print('=== DID CHANGE DEPENDENCIES ===');
+    print('Widget chat room ID: ${widget.chatRoom.chatRoomId}');
+    print('Widget chat room: ${widget.chatRoom.toJson()}');
+    
     _chatProvider = context.read<ChatProvider>();
     _signalRService = SignalRService();
     
-
     _messages.clear();
-    
-
     _signalRService.clearSentMessageTracking();
     
-    _initializeSignalR();
-    _loadMessages();
+    // Check if we have a valid chat room
+    if (widget.chatRoom.chatRoomId != null && widget.chatRoom.chatRoomId! > 0) {
+      print('✅ Using existing chat room: ${widget.chatRoom.chatRoomId}');
+      _currentChatRoomId = widget.chatRoom.chatRoomId;
+      _hasChatRoom = true;
+      _initializeSignalR();
+      _loadMessages();
+    } else {
+      print('❌ Invalid chat room, cannot start chat');
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Invalid chat room. Please select a valid room.'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   @override
@@ -64,66 +84,58 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollController.dispose();
     _messageSubscription?.cancel();
     _connectionSubscription?.cancel();
-    _signalRService.leaveChatRoom(widget.chatRoom.chatRoomId.toString());
-    
-
+    if (_currentChatRoomId != null) {
+      _signalRService.leaveChatRoom(_currentChatRoomId.toString());
+    }
     _messages.clear();
-    
     super.dispose();
   }
 
 
+
   Future<void> _initializeSignalR() async {
     try {
-    
-
       await _signalRService.initializeConnection();
       
-
-      await _signalRService.joinChatRoom(widget.chatRoom.chatRoomId.toString());
+      if (_currentChatRoomId != null) {
+        await _signalRService.joinChatRoom(
+          _currentChatRoomId.toString(),
+          userId: Authorization.currentUserId,
+          userRole: Authorization.userRole ?? (Authorization.currentUserId == 1 ? 'User' : 'Admin'),
+        );
+      }
       
-       
-       _messageSubscription = _signalRService.messageStream.listen((message) {
-     
-          bool messageExists = _messages.any((existingMessage) => 
-            existingMessage.messageId == message.messageId ||
-            (existingMessage.senderId == message.senderId && 
-             existingMessage.displayText == message.displayText &&
-             existingMessage.messageDate == message.messageDate) ||
-   
-            (existingMessage.senderId == message.senderId && 
-             existingMessage.displayText == message.displayText &&
-             DateTime.tryParse(existingMessage.messageDate) != null &&
-             DateTime.tryParse(message.messageDate) != null &&
-             DateTime.tryParse(existingMessage.messageDate)!.difference(DateTime.tryParse(message.messageDate)!).abs().inSeconds < 5)
-          );
-         
-                   if (!messageExists) {
-      
-            setState(() {
-              _messages.add(message);
-            });
-            
-    
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (_scrollController.hasClients) {
-                _scrollController.animateTo(
-                  _scrollController.position.maxScrollExtent,
-                  duration: Duration(milliseconds: 300),
-                  curve: Curves.easeOut,
-                );
-              }
-            });
-          } else {
-     
-            print('   Message ID: ${message.messageId}');
-            print('   Sender ID: ${message.senderId}');
-            print('   Current messages count: ${_messages.length}');
-          }
-       });
+      _messageSubscription = _signalRService.messageStream.listen((message) {
+        bool messageExists = _messages.any((existingMessage) => 
+          existingMessage.messageId == message.messageId ||
+          (existingMessage.senderId == message.senderId && 
+           existingMessage.displayText == message.displayText &&
+           existingMessage.messageDate == message.messageDate) ||
+          (existingMessage.senderId == message.senderId && 
+           existingMessage.displayText == message.displayText &&
+           DateTime.tryParse(existingMessage.messageDate) != null &&
+           DateTime.tryParse(message.messageDate) != null &&
+           DateTime.tryParse(existingMessage.messageDate)!.difference(DateTime.tryParse(message.messageDate)!).abs().inSeconds < 5)
+        );
+        
+        if (!messageExists) {
+          setState(() {
+            _messages.add(message);
+          });
+          
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_scrollController.hasClients) {
+              _scrollController.animateTo(
+                _scrollController.position.maxScrollExtent,
+                duration: Duration(milliseconds: 300),
+                curve: Curves.easeOut,
+              );
+            }
+          });
+        }
+      });
       
       _connectionSubscription = _signalRService.connectionStatusStream.listen((status) {
-  
         if (mounted && status == 'error') {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -134,26 +146,18 @@ class _ChatScreenState extends State<ChatScreen> {
           );
         }
       });
-      
-      print('SignalR initialized successfully for chat room: ${widget.chatRoom.chatRoomId}');
     } catch (e) {
       print('Error initializing SignalR: $e');
-
     }
   }
 
   Future<void> _loadMessages() async {
     try {
-      setState(() {
-        _isLoading = true;
-      });
+      if (_currentChatRoomId == null) return;
 
-  
-      var messages = await _chatProvider.getChatMessages(widget.chatRoom.chatRoomId!);
-    
-      await _chatProvider.markMessagesAsRead(widget.chatRoom.chatRoomId!, Authorization.currentUserId);
+      var messages = await _chatProvider.getChatMessages(_currentChatRoomId!);
+      await _chatProvider.markMessagesAsRead(_currentChatRoomId!, Authorization.currentUserId);
       
-
       var now = DateTime.now();
       var recentMessages = messages.where((message) {
         var messageDate = DateTime.tryParse(message.messageDate);
@@ -161,23 +165,11 @@ class _ChatScreenState extends State<ChatScreen> {
         return now.difference(messageDate).inMinutes <= 10;
       }).toList();
       
-  
-      if (recentMessages.isEmpty) {
-        print('No recent messages found, starting fresh chat');
-      } else {
-        print('Loaded ${recentMessages.length} recent messages');
- 
-        for (var message in recentMessages) {
-          print('Message: ${message.displayText} | Sender: ${message.senderId} | Type: ${message.senderType}');
-        }
-      }
-      
       setState(() {
         _messages = recentMessages;
         _isLoading = false;
       });
       
-
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_scrollController.hasClients) {
           _scrollController.animateTo(
@@ -192,7 +184,6 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {
         _isLoading = false;
       });
-     
     }
   }
 
@@ -200,55 +191,54 @@ class _ChatScreenState extends State<ChatScreen> {
     var messageText = _messageController.text.trim();
     if (messageText.isEmpty) return;
 
+    // Check if we have a valid chat room
+    if (!_hasChatRoom || _currentChatRoomId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No active chat room. Please select a valid room.'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
     try {
       setState(() {
         _isSending = true;
       });
 
-
-      
       _messageController.clear();
       
-    
       String senderType = Authorization.userRole ?? (Authorization.currentUserId == 1 ? 'User' : 'Admin');
       
-
-      
-    
       if (_signalRService.isConnected) {
         try {
-     
           await _signalRService.sendMessage(
-            widget.chatRoom.chatRoomId.toString(),
+            _currentChatRoomId.toString(),
             messageText,
             Authorization.currentUserId,
             senderType,
           );
-
           return;
         } catch (signalRError) {
           print('SignalR failed, falling back to HTTP: $signalRError');
         }
       }
       
-   
       var request = ChatRequest(
-        chatRoomId: widget.chatRoom.chatRoomId!,
+        chatRoomId: _currentChatRoomId!,
         senderId: Authorization.currentUserId,
         senderType: senderType,
         messageText: messageText,
       );
       
-
-      
       var response = await _chatProvider.sendMessage(request);
       
       if (response != null && response.success) {
-        
-
         var newMessage = Message(
           messageId: response.messageId,
-          chatRoomId: widget.chatRoom.chatRoomId!,
+          chatRoomId: _currentChatRoomId!,
           senderId: Authorization.currentUserId,
           senderType: senderType,
           messageText: messageText,
@@ -260,7 +250,6 @@ class _ChatScreenState extends State<ChatScreen> {
           _messages.add(newMessage);
         });
         
-
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_scrollController.hasClients) {
             _scrollController.animateTo(
@@ -272,11 +261,9 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       } else {
         print('Failed to send message via HTTP');
-
       }
     } catch (e) {
       print('Error sending message: $e');
-
     } finally {
       setState(() {
         _isSending = false;
@@ -285,11 +272,9 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildMessageBubble(Message message) {
-
     int actualUserId = Authorization.currentUserId;
     bool isUserMessage = message.senderId == actualUserId;
     
-
     bool isCustomerMessage = message.senderType == 'User' || message.senderType == null;
     bool isEmployeeMessage = message.senderType == 'Admin' || message.senderType == 'Employee';
     
@@ -315,7 +300,6 @@ class _ChatScreenState extends State<ChatScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-
             if (!isUserMessage) ...[
               Text(
                 isEmployeeMessage ? 'Support Team' : 'Customer',
@@ -392,30 +376,26 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-
   void _handleTyping(bool isTyping) {
-    if (_isTyping != isTyping) {
+    if (_isTyping != isTyping && _currentChatRoomId != null) {
       _isTyping = isTyping;
       _signalRService.sendTypingIndicator(
-        widget.chatRoom.chatRoomId.toString(),
+        _currentChatRoomId.toString(),
         Authorization.currentUserId,
         isTyping,
       );
     }
   }
 
-
   void _handleUserAction(String action) {
     switch (action) {
       case 'test_customer':
         Authorization.currentUserId = 1;
         Authorization.userRole = 'User';
-
         break;
       case 'test_employee':
         Authorization.currentUserId = 2;
         Authorization.userRole = 'Admin';
-
         break;
     }
   }
@@ -423,11 +403,10 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return MasterScreenWidget(
-      title: 'Customer Support Chat',
+      title: widget.chatRoom.name ?? widget.chatRoom.roomName ?? 'Chat Room',
       userId: widget.userId,
-      showFloatingChat: false, 
+      showFloatingChat: false,
       actions: [
-
         PopupMenuButton<String>(
           icon: Icon(Icons.person),
           tooltip: 'User Info & Test',
@@ -447,16 +426,28 @@ class _ChatScreenState extends State<ChatScreen> {
               value: 'test_customer',
               child: Text('Test as Customer'),
             ),
-            PopupMenuItem(
-              value: 'test_employee',
-              child: Text('Test as Employee'),
-            ),
           ],
         ),
       ],
       child: Column(
         children: [
-
+          // Chat room status indicator
+          if (_hasChatRoom && _currentChatRoomId != null)
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              color: Colors.green[50],
+              child: Text(
+                'Chat Room Active (ID: $_currentChatRoomId)',
+                style: TextStyle(
+                  color: Colors.green[700],
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          
           Expanded(
             child: _isLoading
                 ? Center(
@@ -469,53 +460,83 @@ class _ChatScreenState extends State<ChatScreen> {
                       ],
                     ),
                   )
-                : _messages.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.chat_bubble_outline,
-                              size: 64,
-                              color: Colors.grey[400],
+                                 : !_hasChatRoom
+                     ? Center(
+                         child: Column(
+                           mainAxisAlignment: MainAxisAlignment.center,
+                           children: [
+                             Icon(
+                               Icons.error_outline,
+                               size: 64,
+                               color: Colors.red[400],
+                             ),
+                             SizedBox(height: 16),
+                             Text(
+                               'Invalid Chat Room',
+                               style: TextStyle(
+                                 fontSize: 18,
+                                 fontWeight: FontWeight.bold,
+                                 color: Colors.red[600],
+                               ),
+                             ),
+                             SizedBox(height: 8),
+                             Text(
+                               'Please select a valid chat room from the list.',
+                               style: TextStyle(
+                                 fontSize: 14,
+                                 color: Colors.grey[500],
+                               ),
+                             ),
+                           ],
+                         ),
+                       )
+                    : _messages.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.chat_bubble_outline,
+                                  size: 64,
+                                  color: Colors.grey[400],
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  'No messages yet',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  'Start the conversation!',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[500],
+                                  ),
+                                ),
+                              ],
                             ),
-                            SizedBox(height: 16),
-                            Text(
-                              'No messages yet',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[600],
-                              ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: _loadMessages,
+                            child: ListView.builder(
+                              controller: _scrollController,
+                              padding: EdgeInsets.symmetric(vertical: 8),
+                              itemCount: _messages.length + (_showTypingIndicator ? 1 : 0),
+                              itemBuilder: (context, index) {
+                                if (index == _messages.length && _showTypingIndicator) {
+                                  return _buildTypingIndicator();
+                                }
+                                return _buildMessageBubble(_messages[index]);
+                              },
                             ),
-                            SizedBox(height: 8),
-                            Text(
-                              'Start the conversation!',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[500],
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _loadMessages,
-                        child: ListView.builder(
-                          controller: _scrollController,
-                          padding: EdgeInsets.symmetric(vertical: 8),
-                          itemCount: _messages.length + (_showTypingIndicator ? 1 : 0),
-                          itemBuilder: (context, index) {
-                            if (index == _messages.length && _showTypingIndicator) {
-                              return _buildTypingIndicator();
-                            }
-                            return _buildMessageBubble(_messages[index]);
-                          },
-                        ),
-                      ),
+                          ),
           ),
           
-
+          // Message input area
           Container(
             padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -533,14 +554,15 @@ class _ChatScreenState extends State<ChatScreen> {
                 Expanded(
                   child: TextField(
                     controller: _messageController,
+                    enabled: _hasChatRoom,
                     decoration: InputDecoration(
-                      hintText: 'Type your message...',
+                      hintText: _hasChatRoom ? 'Type your message...' : 'Start conversation to chat',
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: Colors.grey[100],
+                      fillColor: _hasChatRoom ? Colors.grey[100] : Colors.grey[200],
                       contentPadding: EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 12,
@@ -550,18 +572,20 @@ class _ChatScreenState extends State<ChatScreen> {
                     textCapitalization: TextCapitalization.sentences,
                     onSubmitted: (_) => _sendMessage(),
                     onChanged: (text) {
-                      _handleTyping(text.isNotEmpty);
+                      if (_hasChatRoom) {
+                        _handleTyping(text.isNotEmpty);
+                      }
                     },
                   ),
                 ),
                 SizedBox(width: 8),
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.orange,
+                    color: _hasChatRoom ? Colors.orange : Colors.grey,
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
-                    onPressed: _isSending ? null : _sendMessage,
+                    onPressed: _hasChatRoom && !_isSending ? _sendMessage : null,
                     icon: _isSending
                         ? SizedBox(
                             width: 20,
