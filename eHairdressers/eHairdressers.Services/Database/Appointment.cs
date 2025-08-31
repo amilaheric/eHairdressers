@@ -19,7 +19,7 @@ namespace eHairdressers.Services.Database
         public DateTime AppointmentDate { get; set; }
         [Column(TypeName = "Time")]
         public TimeSpan AppointmentTime { get; set; }
-        public bool? Approved { get; set; }
+        public string Status { get; set; } = "Scheduled"; // Default status: Scheduled, Confirmed, Cancelled, Completed
         public string? Comment { get; set; }
 
         public virtual Service Service { get; set; }

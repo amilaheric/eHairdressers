@@ -361,12 +361,12 @@ namespace eHairdressers.Services.Database
         
             var appointments = new List<Appointment>
             {
-                new Appointment { UserId = users[0].UserId, EmployeeId = employees[0].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 7, 22), AppointmentTime = new TimeSpan(9, 0, 0), Approved = null, Comment = "First time visit" },
-                new Appointment { UserId = users[0].UserId, EmployeeId = employees[0].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 8, 8), AppointmentTime = new TimeSpan(9, 0, 0), Approved = null, Comment = "Regular customer" },
-                new Appointment { UserId = users[0].UserId, EmployeeId = employees[0].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 8, 8), AppointmentTime = new TimeSpan(10, 0, 0), Approved = false, Comment = "Follow-up appointment" },
-                new Appointment { UserId = users[0].UserId, EmployeeId = employees[0].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 8, 17), AppointmentTime = new TimeSpan(16, 0, 0), Approved = false, Comment = "Evening appointment" },
-                new Appointment { UserId = users[0].UserId, EmployeeId = employees[1].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 8, 20), AppointmentTime = new TimeSpan(12, 0, 0), Approved = false, Comment = "Lunch time appointment" },
-                new Appointment { UserId = users[1].UserId, EmployeeId = employees[1].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = DateTime.Today.AddDays(1), AppointmentTime = new TimeSpan(14, 0, 0), Approved = null, Comment = "New customer" },
+                new Appointment { UserId = users[0].UserId, EmployeeId = employees[0].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 7, 22), AppointmentTime = new TimeSpan(9, 0, 0), Status = "Scheduled", Comment = "First time visit" },
+                new Appointment { UserId = users[0].UserId, EmployeeId = employees[0].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 8, 8), AppointmentTime = new TimeSpan(9, 0, 0), Status = "Scheduled", Comment = "Regular customer" },
+                new Appointment { UserId = users[0].UserId, EmployeeId = employees[0].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 8, 8), AppointmentTime = new TimeSpan(10, 0, 0), Status = "Cancelled", Comment = "Follow-up appointment" },
+                new Appointment { UserId = users[0].UserId, EmployeeId = employees[0].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 8, 17), AppointmentTime = new TimeSpan(16, 0, 0), Status = "Cancelled", Comment = "Evening appointment" },
+                new Appointment { UserId = users[0].UserId, EmployeeId = employees[1].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 8, 20), AppointmentTime = new TimeSpan(12, 0, 0), Status = "Cancelled", Comment = "Lunch time appointment" },
+                new Appointment { UserId = users[1].UserId, EmployeeId = employees[1].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = DateTime.Today.AddDays(1), AppointmentTime = new TimeSpan(14, 0, 0), Status = "Scheduled", Comment = "New customer" },
      };
 
             context.Appointments.AddRange(appointments);

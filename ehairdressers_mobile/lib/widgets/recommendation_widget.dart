@@ -4,6 +4,7 @@ import 'package:ehairdressers_mobile/models/recommendation.dart';
 import 'package:ehairdressers_mobile/models/product.dart';
 import 'package:ehairdressers_mobile/providers/cart_provider.dart';
 import 'package:ehairdressers_mobile/providers/recommendation_provider.dart';
+import 'package:ehairdressers_mobile/screens/product_details_screen.dart';
 import 'package:ehairdressers_mobile/utils/util.dart';
 import 'package:provider/provider.dart';
 
@@ -12,6 +13,7 @@ class RecommendationWidget extends StatelessWidget {
   final String title;
   final String? subtitle;
   final VoidCallback? onProductTap;
+  final List<Product> allProducts;
 
   const RecommendationWidget({
     Key? key,
@@ -19,7 +21,19 @@ class RecommendationWidget extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.onProductTap,
+    required this.allProducts,
   }) : super(key: key);
+
+  Product? _findProductByName(String productName) {
+    try {
+      return allProducts.firstWhere(
+        (product) => product.name?.toLowerCase() == productName.toLowerCase(),
+        orElse: () => allProducts.first,
+      );
+    } catch (e) {
+      return allProducts.isNotEmpty ? allProducts.first : null;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -86,12 +100,15 @@ class RecommendationWidget extends StatelessWidget {
               onProductTap!();
             }
             
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Viewing ${recommendation.productName}'),
-                duration: Duration(seconds: 1),
-              ),
-            );
+            // Find the product from allProducts and navigate to details
+            final product = _findProductByName(recommendation.productName);
+            if (product != null) {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => ProductDetailsScreen(product: product),
+                ),
+              );
+            }
           },
           borderRadius: BorderRadius.circular(12),
           child: Column(
@@ -325,6 +342,7 @@ class _RecommendationSectionState extends State<RecommendationSection> {
             recommendations: personalizedRecommendations,
             title: 'Recommended for You',
             subtitle: 'Based on your preferences',
+            allProducts: widget.allProducts,
           ),
         
         SizedBox(height: 16),
@@ -334,6 +352,7 @@ class _RecommendationSectionState extends State<RecommendationSection> {
             recommendations: popularProducts,
             title: 'Popular Products',
             subtitle: 'Trending now',
+            allProducts: widget.allProducts,
           ),
       ],
     );

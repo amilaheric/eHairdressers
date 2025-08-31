@@ -2,6 +2,7 @@ import 'package:ehairdressers_mobile/models/product.dart';
 import 'package:ehairdressers_mobile/providers/cart_provider.dart';
 import 'package:ehairdressers_mobile/providers/product_provider.dart';
 import 'package:ehairdressers_mobile/providers/recommendation_provider.dart';
+import 'package:ehairdressers_mobile/screens/product_details_screen.dart';
 import 'package:ehairdressers_mobile/utils/util.dart';
 import 'package:ehairdressers_mobile/widgets/master_screen.dart';
 import 'package:ehairdressers_mobile/widgets/recommendation_widget.dart';
@@ -125,6 +126,13 @@ class _ProductListScreenState extends State<ProductListScreen> {
               child: Container(
                 child: Column(children: [
                   InkWell(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => ProductDetailsScreen(product: x),
+                        ),
+                      );
+                    },
                     child: Container(
                       height: 100,
                       width: 100,

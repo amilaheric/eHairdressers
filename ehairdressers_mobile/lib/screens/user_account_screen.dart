@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ehairdressers_mobile/models/user_account.dart';
 import 'package:ehairdressers_mobile/providers/user_account_provider.dart';
+import 'package:ehairdressers_mobile/screens/user_appointments_screen.dart';
 import 'package:ehairdressers_mobile/widgets/master_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -204,6 +205,17 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
                 ],
               ),
             ),
+            
+            // Logout button
+            IconButton(
+              onPressed: _showLogoutDialog,
+              icon: Icon(
+                Icons.logout,
+                color: Colors.red[600],
+                size: 24,
+              ),
+              tooltip: 'Logout',
+            ),
           ],
         ),
       ),
@@ -319,37 +331,60 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
   Widget _buildAppointmentsSection() {
     return Card(
       elevation: 2,
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.calendar_today, color: Colors.blue),
-                SizedBox(width: 8),
-                Text(
-                  'My Appointments',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => UserAppointmentsScreen(
+                userId: widget.userId,
+              ),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.calendar_today, color: Colors.blue),
+                  SizedBox(width: 8),
+                  Text(
+                    'My Appointments',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
+                  Spacer(),
+                  Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 16),
+                ],
+              ),
+              SizedBox(height: 12),
+              Text(
+                'Total Appointments: ${_userAccount!.totalAppointments}',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              if (_userAccount!.memberSince != null) ...[
+                SizedBox(height: 8),
+                Text(
+                  'Member since: ${DateFormat('MMM yyyy').format(DateTime.parse(_userAccount!.memberSince!))}',
+                  style: TextStyle(fontSize: 14),
                 ),
               ],
-            ),
-            SizedBox(height: 12),
-            Text(
-              'Total Appointments: ${_userAccount!.totalAppointments}',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-            if (_userAccount!.memberSince != null) ...[
               SizedBox(height: 8),
               Text(
-                'Member since: ${DateFormat('MMM yyyy').format(DateTime.parse(_userAccount!.memberSince!))}',
-                style: TextStyle(fontSize: 14),
+                'Tap to view all appointments',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -477,6 +512,106 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
         ),
       ),
     );
+  }
+
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                Icons.logout,
+                color: Colors.red[600],
+                size: 24,
+              ),
+              SizedBox(width: 8),
+              Text('Logout'),
+            ],
+          ),
+          content: Text(
+            'Are you sure you want to logout? You will need to sign in again to access your account.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: _performLogout,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[600],
+                foregroundColor: Colors.white,
+              ),
+              child: Text('Logout'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _performLogout() async {
+    try {
+      // Close the dialog
+      Navigator.of(context).pop();
+      
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
+
+      // Call backend logout API
+      final logoutResult = await _userAccountProvider.logout(widget.userId);
+      
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
+      if (logoutResult == true) {
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Successfully logged out'),
+            backgroundColor: Colors.green[600],
+            duration: Duration(seconds: 2),
+          ),
+        );
+        
+        // Clear local user data (if any)
+        // You might want to clear stored tokens, user preferences, etc.
+        
+        // Navigate back to login screen or main screen
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          '/', // Replace with your actual login route
+          (route) => false, // This removes all previous routes
+        );
+      } else {
+        throw Exception('Logout failed on server');
+      }
+      
+    } catch (e) {
+      // Close loading dialog
+      Navigator.of(context).pop();
+      
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error during logout: $e'),
+          backgroundColor: Colors.red[600],
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   void _showLoyaltyTierInfo(Map<String, dynamic> tierInfo) {

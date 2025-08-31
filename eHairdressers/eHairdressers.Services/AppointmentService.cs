@@ -26,7 +26,12 @@ namespace eHairdressers.Services
 
         public async Task<List<Model.Appointment>> GetAppointmentsByUserIdAsync(int userId)
         {
-            var entity = await _context.Appointments.Where(a => a.UserId == userId).ToListAsync();
+            var entity = await _context.Appointments
+                .Where(a => a.UserId == userId)
+                .Include(a => a.Employee)
+                .Include(a => a.Service)
+                .Include(a => a.User)
+                .ToListAsync();
             return _mapper.Map<List<Model.Appointment>>(entity);
         }
 
@@ -55,7 +60,7 @@ namespace eHairdressers.Services
                 throw new InvalidOperationException($"Service with ID {insert.ServiceId} does not exist. Please provide a valid Service ID.");
             }
 
-            entity.Approved = false;
+            entity.Status = "Scheduled";
         }
 
         public override IQueryable<Database.Appointment> AddInclude(IQueryable<Database.Appointment> query, AppointmentsSearchObject? search = null)
@@ -86,20 +91,17 @@ namespace eHairdressers.Services
 
         public override async Task<PageResult<Model.Appointment>> Get(AppointmentsSearchObject? search = null)
         {
-          
-            
             var query = _context.Set<Database.Appointment>().AsQueryable();
 
             var result = new PageResult<Model.Appointment>();
 
-            query = AddFilter(query, search);
-       
-            
+            // First add includes to ensure navigation properties are loaded
             query = AddInclude(query, search);
-         
+            
+            // Then apply filters
+            query = AddFilter(query, search);
 
             result.Count = await query.CountAsync();
-          
 
             if (search?.Page.HasValue == true && search?.PageSize.HasValue == true) {
                 query = query.Take(search.PageSize.Value).Skip(search.Page.Value * search.PageSize.Value);
@@ -189,6 +191,44 @@ namespace eHairdressers.Services
             return _mapper.Map<List<Model.Appointment>>(appointmentsWithoutReviews);
         }
 
+        public async Task<bool> CancelAppointmentAsync(int appointmentId)
+        {
+            try
+            {
+                var appointment = await _context.Appointments
+                    .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
+
+                if (appointment == null)
+                {
+                    throw new InvalidOperationException($"Appointment with ID {appointmentId} not found.");
+                }
+
+                // Check if appointment is in the future
+                var appointmentDateTime = appointment.AppointmentDate.Add(appointment.AppointmentTime);
+                if (appointmentDateTime <= DateTime.Now)
+                {
+                    throw new InvalidOperationException("Cannot cancel past or current appointments.");
+                }
+
+                            // Update appointment status to cancelled
+            appointment.Status = "Cancelled";
+                
+                // Add a comment indicating cancellation
+                appointment.Comment = appointment.Comment != null 
+                    ? $"{appointment.Comment} [CANCELLED]" 
+                    : "[CANCELLED]";
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Log the error (you can add proper logging here)
+                Console.WriteLine($"Error cancelling appointment {appointmentId}: {ex.Message}");
+                throw;
+            }
+        }
+
         public override async Task AfterInsert(Database.Appointment entity, AppointmentInsertRequest insert)
         {
              await SendAppointmentCreatedMessageAsync(entity);
@@ -217,7 +257,7 @@ namespace eHairdressers.Services
                     AppointmentDate = appointment.AppointmentDate,
                     AppointmentTime = appointment.AppointmentTime,
                     Comment = appointment.Comment,
-                    Approved = appointment.Approved
+                    Status = appointment.Status
                 };
 
                 await _messagingService.PublishAppointmentCreatedAsync(message);

@@ -6,6 +6,7 @@ import 'package:ehairdressers_mobile/providers/employees_provider.dart';
 import 'package:ehairdressers_mobile/providers/service_provider.dart';
 import 'package:ehairdressers_mobile/providers/user_provider.dart';
 import 'package:ehairdressers_mobile/screens/appointment_time_screen.dart';
+import 'package:ehairdressers_mobile/screens/user_appointments_screen.dart';
 import 'package:ehairdressers_mobile/widgets/master_screen.dart';
 import 'package:ehairdressers_mobile/utils/util.dart';
 import 'package:flutter/material.dart';

@@ -45,7 +45,7 @@ namespace eHairdressers.Services
                 LastLoginDate = null,
                 IsActive = user.Status ?? true,
                 TotalAppointments = appointments.Count,
-                CompletedAppointments = appointments.Count(a => a.Approved.HasValue && a.Approved.Value),
+                CompletedAppointments = appointments.Count(a => a.Status == "Completed"),
                 TotalOrders = orders.Count,
                 CompletedOrders = orders.Count(o => o.Status == true),
                 TotalSpent = totalSpent,
@@ -71,9 +71,9 @@ namespace eHairdressers.Services
             {
                 UserId = userId,
                 TotalAppointments = appointments.Count,
-                CompletedAppointments = appointments.Count(a => a.Approved.HasValue && a.Approved.Value),
-                CancelledAppointments = appointments.Count(a => a.Approved.HasValue && !a.Approved.Value),
-                NoShowAppointments = appointments.Count(a => !a.Approved.HasValue),
+                CompletedAppointments = appointments.Count(a => a.Status == "Completed"),
+                CancelledAppointments = appointments.Count(a => a.Status == "Cancelled"),
+                NoShowAppointments = appointments.Count(a => a.Status == "Scheduled"),
                 TotalOrders = orders.Count,
                 CompletedOrders = orders.Count(o => o.Status == true),
                 CancelledOrders = orders.Count(o => o.Status == false),
@@ -184,7 +184,7 @@ namespace eHairdressers.Services
         private async Task<(decimal totalSpent, int loyaltyPoints, string loyaltyTier, decimal loyaltyDiscount)> GetUserMetrics(int userId)
         {
             var completedAppointments = await _context.Appointments
-                .Where(a => a.UserId == userId && a.Approved.HasValue && a.Approved.Value)
+                .Where(a => a.UserId == userId && a.Status == "Completed")
                 .CountAsync();
 
             

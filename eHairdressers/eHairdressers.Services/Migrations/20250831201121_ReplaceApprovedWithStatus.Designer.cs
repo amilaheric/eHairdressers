@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using eHairdressers.Services.Database;
 
@@ -11,9 +12,11 @@ using eHairdressers.Services.Database;
 namespace eHairdressers.Services.Migrations
 {
     [DbContext(typeof(eHairdressersContext))]
-    partial class eHairdressersContextModelSnapshot : ModelSnapshot
+    [Migration("20250831201121_ReplaceApprovedWithStatus")]
+    partial class ReplaceApprovedWithStatus
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

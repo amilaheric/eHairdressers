@@ -9,6 +9,111 @@ import 'base_provider.dart';
 class AppointmentProvider extends BaseProvider<Appointment> {
   AppointmentProvider() : super("Appointment");
 
+  // Cancel an appointment
+  Future<bool> cancelAppointment(int appointmentId) async {
+    try {
+      print('=== CANCELLING APPOINTMENT ===');
+      print('Appointment ID: $appointmentId');
+      
+      var url = "http://10.0.2.2:7051/Appointment/cancel/$appointmentId";
+      print('URL: $url');
+      
+      var uri = Uri.parse(url);
+      var headers = createHeaders();
+      
+      print('Headers: $headers');
+      
+      var response = await http.put(uri, headers: headers);
+      
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body);
+        print('Decoded data: $data');
+        
+        // Accept both success formats
+        if (data is Map && (data['success'] == true || data['Success'] == true)) {
+          print('✅ Appointment cancelled successfully');
+          return true;
+        } else {
+          print('❌ Appointment cancellation failed: ${data['message'] ?? data['Message'] ?? 'Unknown error'}');
+          return false;
+        }
+      } else if (response.statusCode == 204) {
+        // No content response is also acceptable for cancellation
+        print('✅ Appointment cancelled successfully (204 No Content)');
+        return true;
+      } else {
+        print('❌ Failed to cancel appointment. Status: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      print('❌ Error cancelling appointment: $e');
+      return false;
+    }
+  }
+
+  // Get appointments for a specific user using the /Appointment/{userId} endpoint
+  Future<List<Appointment>> getUserAppointments(int userId) async {
+    try {
+      print('=== GETTING USER APPOINTMENTS ===');
+      print('User ID: $userId');
+      
+      var url = "http://10.0.2.2:7051/Appointment/$userId";
+      print('URL: $url');
+      
+      var uri = Uri.parse(url);
+      var headers = createHeaders();
+      
+      print('Headers: $headers');
+      
+      var response = await http.get(uri, headers: headers);
+      
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+      
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body);
+        print('Decoded data: $data');
+        
+        List<Appointment> appointments = [];
+        
+        // Handle different response formats
+        if (data is List) {
+          // Direct list response
+          for (var item in data) {
+            appointments.add(fromJson(item));
+          }
+        } else if (data is Map) {
+          // Check for Result property
+          if (data['Result'] != null) {
+            for (var item in data['Result']) {
+              appointments.add(fromJson(item));
+            }
+          } else if (data['result'] != null) {
+            for (var item in data['result']) {
+              appointments.add(fromJson(item));
+            }
+          } else if (data['data'] != null) {
+            for (var item in data['data']) {
+              appointments.add(fromJson(item));
+            }
+          }
+        }
+        
+        print('✅ Found ${appointments.length} appointments for user $userId');
+        return appointments;
+      } else {
+        print('❌ Failed to get appointments. Status: ${response.statusCode}');
+        throw Exception('Failed to get appointments. Status: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('❌ Error getting user appointments: $e');
+      throw Exception('Error getting user appointments: $e');
+    }
+  }
+
   @override
   Appointment fromJson(data) {
     try {

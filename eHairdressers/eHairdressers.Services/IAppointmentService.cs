@@ -17,5 +17,6 @@ namespace eHairdressers.Services
         Task<List<Model.User>> GetAvailableUsers();
         Task<List<Model.Service>> GetAvailableServices();
         Task<List<Model.Appointment>> GetCompletedAppointmentsForReviewAsync(int userId);
+        Task<bool> CancelAppointmentAsync(int appointmentId);
     }
 }

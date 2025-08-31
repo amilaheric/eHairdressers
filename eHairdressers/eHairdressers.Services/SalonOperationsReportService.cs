@@ -178,7 +178,7 @@ namespace eHairdressers.Services
                     ServiceId = g.Key.ServiceId,
                     ServiceName = g.Key.ServiceName,
                     TotalBookings = g.Count(),
-                    CompletedBookings = g.Count(x => x.a.Approved == true),
+                    CompletedBookings = g.Count(x => x.a.Status == "Completed"),
                     AverageRating = (decimal)reviews
                         .Where(r => g.Any(x => x.a.AppointmentId == r.AppointmentId))
                         .Select(r => r.Rate.Value)

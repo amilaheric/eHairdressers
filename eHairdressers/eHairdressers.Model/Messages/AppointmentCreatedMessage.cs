@@ -14,7 +14,7 @@ namespace eHairdressers.Model.Messages
         public string ServiceName { get; set; }
         public DateTime AppointmentDate { get; set; }
         public TimeSpan AppointmentTime { get; set; }
-        public bool? Approved { get; set; }
+        public string Status { get; set; } = "Scheduled";
         public string Comment { get; set; }
 
     }

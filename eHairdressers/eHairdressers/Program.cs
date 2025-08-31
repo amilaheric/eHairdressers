@@ -40,9 +40,11 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityDefinition("basicAuth", new Microsoft.OpenApi.Models.OpenApiSecurityScheme()
     {
         Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
-        Scheme = "basic"
+        Scheme = "basic",
+        Description = "Basic Authentication header"
     });
 
+    // Apply security requirement to all operations
     c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement()
     {
         {
@@ -54,7 +56,8 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
     
-    
+    // Ensure all operations are documented
+    c.DocInclusionPredicate((name, api) => true);
     });
 builder.Services.AddTransient<IProductsService, ProductsService>();
 builder.Services.AddTransient<IService<eHairdressers.Model.Brand,BaseSearchObject>, BaseService<eHairdressers.Model.Brand,eHairdressers.Services.Database.Brand,BaseSearchObject>>();

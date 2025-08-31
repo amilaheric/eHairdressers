@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ehairdressers_mobile/providers/appointment_provider.dart';
 import 'package:ehairdressers_mobile/models/appointment_insert_request.dart';
 import 'package:ehairdressers_mobile/models/appointment.dart';
+import 'package:ehairdressers_mobile/screens/user_appointments_screen.dart';
 
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -80,11 +81,25 @@ class _AppointmentTimeScreenState extends State<AppointmentTimeScreen> {
         ),
         actions: [
           TextButton(
+            onPressed: () {
+              // Close the dialog
+              Navigator.pop(context);
+              // Navigate to user appointments screen to show all user's appointments
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => UserAppointmentsScreen(
+                    userId: widget.userId,
+                  ),
+                ),
+              );
+            },
+            child: Text("View My Appointments"),
+          ),
+          TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text("Close"),
           ),
-
-
         ],
       ),
     );

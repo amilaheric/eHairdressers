@@ -436,4 +436,70 @@ class UserAccountProvider extends BaseProvider<UserAccount> {
       return null;
     }
   }
+
+  // Logout user
+  Future<bool> logout(int userId) async {
+    try {
+      print('=== LOGGING OUT USER ===');
+      print('User ID: $userId');
+      
+      // Your backend logout endpoint doesn't require a request body
+      // It gets user info from JWT claims automatically
+      var response = await http!.post(
+        Uri.parse('http://10.0.2.2:7051/User/logout'),
+        headers: createHeaders(),
+        // No body needed - backend gets user from JWT token
+      );
+      
+      print('Logout response status: ${response.statusCode}');
+      print('Logout response body: ${response.body}');
+      
+      if (response.statusCode == 200) {
+        var jsonData = json.decode(response.body);
+        
+        if (jsonData['success'] == true) {
+          print('✅ User logged out successfully');
+          print('Logged out user: ${jsonData['loggedOutUser']}');
+          return true;
+        } else {
+          print('❌ Logout failed: ${jsonData['message'] ?? 'Unknown error'}');
+          return false;
+        }
+      } else {
+        print('❌ Logout failed with status: ${response.statusCode}');
+        return false;
+      }
+      
+    } catch (e) {
+      print('❌ Error during logout: $e');
+      return false;
+    }
+  }
+
+  // Get current user information (useful for debugging)
+  Future<Map<String, dynamic>?> getCurrentUser() async {
+    try {
+      print('=== GETTING CURRENT USER ===');
+      
+      var response = await http!.get(
+        Uri.parse('http://10.0.2.2:7051/User/current-user'),
+        headers: createHeaders(),
+      );
+      
+      print('Current user response status: ${response.statusCode}');
+      print('Current user response body: ${response.body}');
+      
+      if (response.statusCode == 200) {
+        var jsonData = json.decode(response.body);
+        print('✅ Current user info loaded successfully');
+        return jsonData;
+      } else {
+        print('❌ Failed to get current user: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('❌ Error getting current user: $e');
+      return null;
+    }
+  }
 }
