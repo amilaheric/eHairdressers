@@ -21,8 +21,15 @@ class BaseProvider<T> with ChangeNotifier {
       var url = "$_baseUrl$endpoint";
       if (filter != null) {
         var queryString = getQueryString(filter);
+        // Remove the leading & and add ? instead
+        if (queryString.startsWith('&')) {
+          queryString = queryString.substring(1);
+        }
         url = "$url?$queryString";
       }
+
+      print("Making API call to: $url");
+      print("Filter parameters: $filter");
 
       var uri = Uri.parse(url);
       var headers = createHeaders();
@@ -31,31 +38,11 @@ class BaseProvider<T> with ChangeNotifier {
       
       if (response.statusCode == 200) {
         var data = jsonDecode(response.body);
+        print("Raw API response: $data");
+        print("Response keys: ${data.keys.toList()}");
         
-        var result = SearchResult<T>();
-        result.count = data['Count'] ?? 0;
-
-        if (data['Result'] != null) {
-          result.result.clear();
-          for (var item in data['Result']) {
-            try {
-              var parsedItem = fromJson(item);
-              result.result.add(parsedItem);
-            } catch (e) {
-              
-            }
-          }
-        } else if (data is List) {
-          result.result.clear();
-          for (var item in data) {
-            try {
-              var parsedItem = fromJson(item);
-              result.result.add(parsedItem);
-            } catch (e) {
-        
-            }
-          }
-        }
+        // Use the new SearchResult.fromJson method
+        var result = SearchResult<T>.fromJson(data, fromJson);
         
         return result;
       } else if (response.statusCode == 401) {

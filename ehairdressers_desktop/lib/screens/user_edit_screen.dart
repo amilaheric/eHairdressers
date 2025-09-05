@@ -1,10 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:ehairdressers_mobile/models/SearchResult.dart';
 import 'package:ehairdressers_mobile/models/user.dart';
-import 'package:ehairdressers_mobile/models/employee.dart';
-import 'package:ehairdressers_mobile/providers/EmployeeProvider.dart';
+import 'package:ehairdressers_mobile/providers/UserProvider.dart';
 import 'package:ehairdressers_mobile/widgets/master_screen.dart';
 import 'package:ehairdressers_mobile/widgets/validation_field.dart';
 import 'package:ehairdressers_mobile/utils/validation_utils.dart';
@@ -12,26 +10,35 @@ import 'package:ehairdressers_mobile/utils/success_messages.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-class EmployeeAdd extends StatefulWidget {
-  User? user;
-  EmployeeAdd({Key? key, this.user}) : super(key: key);
+class UserEditScreen extends StatefulWidget {
+  final User user;
+  final bool isCurrentUser;
+
+  UserEditScreen({Key? key, required this.user, this.isCurrentUser = false}) : super(key: key);
+
   @override
-  State<EmployeeAdd> createState() => _EmployeeAddState();
+  State<UserEditScreen> createState() => _UserEditScreenState();
 }
 
-class _EmployeeAddState extends State<EmployeeAdd> {
+class _UserEditScreenState extends State<UserEditScreen> {
   File? selectedImage;
   String? _base64Image;
   bool isLoading = true;
+  bool changePassword = false;
   final _formKey = GlobalKey<FormBuilderState>();
-  Map<String, dynamic> _initialValue = {};
-  late EmployeeProvider _employeeProvider;
-  SearchResult<Employee>? employee;
+  late UserProvider _userProvider;
   String defaultImagePath = 'assets/images/default.jpg';
+
+  @override
+  void initState() {
+    super.initState();
+    _userProvider = context.read<UserProvider>();
+    setState(() {
+      isLoading = false;
+    });
+  }
 
   Future<void> pickImage() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -44,62 +51,28 @@ class _EmployeeAddState extends State<EmployeeAdd> {
         selectedImage = file;
         _base64Image = base64Encode(selectedImage!.readAsBytesSync());
       });
-    } else {
-     
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _initializeForm();
-  }
-
-  void _initializeForm() {
-    if (widget.user != null) {
-      // Initialize form with existing user data for editing
-      _initialValue = {
-        'name': widget.user!.name ?? '',
-        'surname': widget.user!.surname ?? '',
-        'email': widget.user!.email ?? '',
-        'phone': widget.user!.phone ?? '',
-        'username': widget.user!.username ?? '',
-        'citizenshipNumber': widget.user!.citizenshipNumber ?? '',
-        'birthDate': widget.user!.birthDate ?? '',
-        'address': widget.user!.address ?? '',
-      };
-    } else {
-      _initialValue = {};
-    }
-
-    _employeeProvider = context.read<EmployeeProvider>();
-    initForm();
-  }
-
-  Future initForm() async {
-    try {
-      employee = await _employeeProvider.get();
-      print(employee);
-    } catch (e) {
-      print("Error loading employees: $e");
-      employee = SearchResult<Employee>();
-    }
-
+  void _resetForm() {
+    _formKey.currentState?.reset();
     setState(() {
-      isLoading = false;
+      selectedImage = null;
+      _base64Image = null;
+      changePassword = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return MasterScreenWidget(
-        title: widget.user == null ? "Add Employee" : "Edit Employee",
+        title: widget.isCurrentUser ? "Edit Profile" : "Edit User",
         child: Container(
             margin: EdgeInsets.only(top: 30),
             child: SingleChildScrollView(
               child: Column(children: [
-                isLoading ? Center(child: CircularProgressIndicator()) : _buildEmployeeform(),
-                SizedBox(height: 30),
+                isLoading ? Center(child: CircularProgressIndicator()) : _buildForm(),
+                SizedBox(height: 20),
                 Align(
                     alignment: Alignment.center,
                     child: ElevatedButton(
@@ -111,28 +84,29 @@ class _EmployeeAddState extends State<EmployeeAdd> {
                           if (request['birthDate'] is DateTime) {
                             request['birthDate'] = (request['birthDate'] as DateTime).toIso8601String().split('T')[0];
                           }
-                          if (request['hireDate'] is DateTime) {
-                            request['hireDate'] = (request['hireDate'] as DateTime).toIso8601String().split('T')[0];
-                          }
 
                           // Add image if selected
                           if (_base64Image != null) {
                             request['image'] = _base64Image;
                           }
 
+                          // Remove password fields if not changing password
+                          if (!changePassword) {
+                            request.remove('oldPassword');
+                            request.remove('password');
+                            request.remove('passwordconfirm');
+                          }
+
                           try {
-                            if (widget.user == null) {
-                              // Creating new employee
-                              await _employeeProvider.createEmployeeWithRole(request);
-                              SuccessMessages.showEmployeeCreated(context);
-                              Navigator.pop(context);
+                            await _userProvider.update(widget.user.userId!, request);
+                            
+                            if (widget.isCurrentUser) {
+                              SuccessMessages.showProfileUpdated(context);
                             } else {
-                              // Updating existing employee
-                              request['userId'] = widget.user!.userId;
-                              await _employeeProvider.update(widget.user!.userId!, request);
-                              SuccessMessages.showEmployeeUpdated(context);
-                              Navigator.pop(context);
+                              SuccessMessages.showUserUpdated(context);
                             }
+                            
+                            Navigator.pop(context);
                           } on Exception catch (e) {
                             _showErrorDialog(context, "Error", e.toString());
                           }
@@ -142,7 +116,7 @@ class _EmployeeAddState extends State<EmployeeAdd> {
                               "Please fix the errors in the form before submitting.");
                         }
                       },
-                      child: Text(widget.user == null ? "Save" : "Update"),
+                      child: Text("Update"),
                       style: ElevatedButton.styleFrom(
                           backgroundColor: Color.fromARGB(255, 247, 233, 211),
                           foregroundColor: Color(0x0FF938f94),
@@ -169,10 +143,22 @@ class _EmployeeAddState extends State<EmployeeAdd> {
     );
   }
 
-  FormBuilder _buildEmployeeform() {
+  FormBuilder _buildForm() {
+    // Initialize form values
+    Map<String, dynamic> initialValues = {
+      'name': widget.user.name ?? '',
+      'surname': widget.user.surname ?? '',
+      'email': widget.user.email ?? '',
+      'phone': widget.user.phone ?? '',
+      'username': widget.user.username ?? '',
+      'citizenshipNumber': widget.user.citizenshipNumber ?? '',
+      'birthDate': widget.user.birthDate ?? '',
+      'address': widget.user.address ?? '',
+    };
+
     return FormBuilder(
       key: _formKey,
-      initialValue: _initialValue,
+      initialValue: initialValues,
       child: Container(
         alignment: Alignment.center,
         padding: EdgeInsets.all(20),
@@ -198,7 +184,7 @@ class _EmployeeAddState extends State<EmployeeAdd> {
             ElevatedButton.icon(
               onPressed: pickImage,
               icon: Icon(Icons.image),
-              label: Text('Select Image'),
+              label: Text('Odaberi sliku'),
               style: ElevatedButton.styleFrom(
                   backgroundColor: Color.fromARGB(255, 247, 233, 211),
                   foregroundColor: Color(0x0FF938f94)),
@@ -287,59 +273,63 @@ class _EmployeeAddState extends State<EmployeeAdd> {
               hint: 'Enter username',
               validator: ValidationUtils.validateUsername,
             ),
+            SizedBox(height: 20),
+            
+            // Password change section
+            Text(
+              'Password Change',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             SizedBox(height: 15),
             
-            // Password fields - only required for new employees
-            if (widget.user == null) ...[
+            // Checkbox to enable password change
+            FormBuilderCheckbox(
+              name: 'changePassword',
+              title: Text('I want to change password'),
+              onChanged: (value) {
+                setState(() {
+                  changePassword = value ?? false;
+                });
+              },
+            ),
+            SizedBox(height: 15),
+            
+            // Password fields - only shown if changePassword is true
+            if (changePassword) ...[
+              // For current user, require old password
+              if (widget.isCurrentUser) ...[
+                ValidationField(
+                  name: 'oldPassword',
+                  label: 'Current Password',
+                  hint: 'Enter current password',
+                  obscureText: true,
+                  validator: (value) => ValidationUtils.validateRequired(value, 'Current Password'),
+                ),
+                SizedBox(height: 15),
+              ],
+              
               ValidationField(
                 name: 'password',
-                label: 'Password',
-                hint: 'Enter password',
+                label: 'New Password',
+                hint: 'Enter new password',
                 obscureText: true,
-                validator: ValidationUtils.validatePassword,
+                validator: changePassword ? ValidationUtils.validatePassword : null,
               ),
               SizedBox(height: 15),
               
               ValidationField(
                 name: 'passwordconfirm',
-                label: 'Confirm Password',
-                hint: 'Confirm password',
+                label: 'Confirm New Password',
+                hint: 'Confirm new password',
                 obscureText: true,
-                validator: (value) => ValidationUtils.validatePasswordConfirm(
-                  value, _formKey.currentState?.value['password']),
+                validator: changePassword ? (value) => ValidationUtils.validatePasswordConfirm(
+                  value, _formKey.currentState?.value['password']) : null,
               ),
               SizedBox(height: 20),
             ],
-            
-            // Employment information
-            Text(
-              'Employment Information',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 15),
-            
-            ValidationDateField(
-              name: 'hireDate',
-              label: 'Hire Date',
-              hint: 'Select hire date',
-              firstDate: DateTime(2000),
-              lastDate: DateTime.now(),
-              validator: (value) => ValidationUtils.validatePastDate(
-                value?.toIso8601String().split('T')[0], 'Hire Date'),
-            ),
-            SizedBox(height: 15),
-            
-            ValidationField(
-              name: 'salary',
-              label: 'Salary',
-              hint: 'Enter salary',
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
-              validator: ValidationUtils.validateSalary,
-            ),
           ]),
         ),
       ),
     );
   }
-
 }

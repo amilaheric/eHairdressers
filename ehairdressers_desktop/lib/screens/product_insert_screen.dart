@@ -9,6 +9,10 @@ import 'package:ehairdressers_mobile/providers/BrandProvider.dart';
 import 'package:ehairdressers_mobile/providers/ProductCategoryProvider.dart';
 import 'package:ehairdressers_mobile/providers/ProductProvider.dart';
 import 'package:ehairdressers_mobile/widgets/master_screen.dart';
+import 'package:ehairdressers_mobile/widgets/validation_field.dart';
+import 'package:ehairdressers_mobile/utils/validation_utils.dart';
+import 'package:ehairdressers_mobile/utils/success_messages.dart';
+import 'package:ehairdressers_mobile/screens/products_list_screen.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -37,7 +41,16 @@ class _ProductInsertState extends State<ProductInsert> {
   @override
   void initState() {
     super.initState();
-  
+    if (widget.product != null) {
+      _initializeEditForm();
+    }
+  }
+
+  void _initializeEditForm() {
+    // Initialize form with existing product data for editing
+    setState(() {
+      // This will be handled in the form initialization
+    });
   }
 
   @override
@@ -61,7 +74,8 @@ class _ProductInsertState extends State<ProductInsert> {
     try {
       brandResult = await _brandProvider.get();
       categoryResult = await _categoryProvider.get();
-    } catch (e) { // Error in initForm
+    } catch (e) {
+      print("Error loading form data: $e");
     }
 
     setState(() {
@@ -84,7 +98,6 @@ class _ProductInsertState extends State<ProductInsert> {
   }
 
   void _resetForm() {
- 
     _formKey.currentState?.reset();
     
     setState(() {
@@ -96,67 +109,99 @@ class _ProductInsertState extends State<ProductInsert> {
   @override
   Widget build(BuildContext context) {
     return MasterScreenWidget(
-        title: "Product upload",
+        title: widget.product == null ? "Add Product" : "Edit Product",
         child: Container(
             margin: EdgeInsets.only(top: 30),
             child: SingleChildScrollView(
               child: Column(children: [
-                isLoading ? Container() : _buildForm(),
-                SizedBox(height: 10),
+                isLoading ? Center(child: CircularProgressIndicator()) : _buildForm(),
+                SizedBox(height: 20),
                 Align(
                     alignment: Alignment.center,
                     child: ElevatedButton(
                       onPressed: () async {
-                        _formKey.currentState?.saveAndValidate();
-                        var request =
-                            new Map.from(_formKey.currentState!.value);
-                        if (_base64Image != null) {
-                          request['image'] = _base64Image;
-                        }
-                        
-                        try {
-                          if (widget.product == null) {
-                            await _productProvider.insert(request);
-                            
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Product uploaded successfully!'),
-                                backgroundColor: Colors.green,
-                                duration: Duration(seconds: 3),
-                              ),
-                            );
-                            
-                            _resetForm();
+                        if (_formKey.currentState?.saveAndValidate() ?? false) {
+                          var request = Map<String, dynamic>.from(_formKey.currentState!.value);
+                          
+                          // Add image if selected
+                          if (_base64Image != null) {
+                            request['image'] = _base64Image;
                           }
-                        } on Exception catch (e) {
-                          showDialog(
-                              context: context,
-                              builder: (BuildContext context) => AlertDialog(
-                                    title: Text("Error"),
-                                    content: Text(e.toString()),
-                                    actions: [
-                                      TextButton(
-                                          onPressed: (() =>
-                                              Navigator.pop(context)),
-                                          child: Text("OK"))
-                                    ],
-                                  ));
+                          
+                          try {
+                            if (widget.product == null) {
+                              // Creating new product
+                              await _productProvider.insert(request);
+                              SuccessMessages.showProductCreated(context);
+                              _resetForm();
+                              // Navigate to products list after successful creation
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ProductsListScreen(),
+                                ),
+                              );
+                            } else {
+                              // Updating existing product
+                              request['id'] = widget.product!.id;
+                              await _productProvider.update(widget.product!.id!, request);
+                              SuccessMessages.showProductUpdated(context);
+                              Navigator.pop(context, true); // Return true to indicate success
+                            }
+                          } on Exception catch (e) {
+                            _showErrorDialog(context, "Error", e.toString());
+                          }
+                        } else {
+                          // Form validation failed
+                          _showErrorDialog(context, "Validation Error", 
+                              "Please fix the errors in the form before submitting.");
                         }
                       },
-                      child: Text("Save"),
+                      child: Text(widget.product == null ? "Save" : "Update"),
                       style: ElevatedButton.styleFrom(
                           backgroundColor: Color.fromARGB(255, 247, 233, 211),
-                          foregroundColor: Color(0x0FF938f94)),
+                          foregroundColor: Color(0x0FF938f94),
+                          padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15)),
                     )),
                 SizedBox(height: 20),
               ]),
             )));
   }
 
+  void _showErrorDialog(BuildContext context, String title, String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("OK")
+          )
+        ],
+      )
+    );
+  }
+
   FormBuilder _buildForm() {
+    // Initialize form values for editing
+    Map<String, dynamic> initialValues = {};
+    if (widget.product != null) {
+      initialValues = {
+        'name': widget.product!.name ?? '',
+        'code': widget.product!.code ?? '',
+        'price': widget.product!.price?.toString() ?? '',
+        'description': widget.product!.description ?? '',
+        'amount': widget.product!.amount?.toString() ?? '',
+        'brandId': widget.product!.brandId?.toString() ?? '',
+        'categoryId': widget.product!.categoryId?.toString() ?? '',
+      };
+    }
+
     return FormBuilder(
       key: _formKey,
-      initialValue: {}, // Removed _initialValue
+      initialValue: initialValues,
       child: Container(
         alignment: Alignment.center,
         padding: EdgeInsets.all(20),
@@ -164,129 +209,116 @@ class _ProductInsertState extends State<ProductInsert> {
             width: 600,
             child: Column(
               children: [
-                SizedBox(
+                // Image section
+                Container(
                   width: 200,
                   height: 200,
-                  child: selectedImage != null
-                      ? Image.file(selectedImage!)
-                      : Image.asset(defaultImagePath),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8.0),
+                    child: selectedImage != null
+                        ? Image.file(selectedImage!, fit: BoxFit.cover)
+                        : Image.asset(defaultImagePath, fit: BoxFit.cover),
+                  ),
                 ),
-                SizedBox(height: 20),
-                ElevatedButton(
-                    onPressed: () {
-                      pickImage();
-                    },
-                    child: Text('Pick Image'),
+                SizedBox(height: 15),
+                ElevatedButton.icon(
+                    onPressed: pickImage,
+                    icon: Icon(Icons.image),
+                    label: Text('Select Image'),
                     style: ElevatedButton.styleFrom(
                         backgroundColor: Color.fromARGB(255, 247, 233, 211),
-                        foregroundColor: Color(0x0FF938f94))),
-                SizedBox(height: 10),
-                FormBuilderTextField(
+                        foregroundColor: Color(0x0FF938f94)),
+                ),
+                SizedBox(height: 20),
+                
+                // Form fields with validation
+                ValidationField(
                   name: 'name',
-                  decoration: InputDecoration(labelText: "Name"),
-                  validator: FormBuilderValidators.compose([
-                    FormBuilderValidators.required(errorText: 'Name is required'),
-                  ]),
+                  label: 'Product Name',
+                  hint: 'Enter product name',
+                  validator: ValidationUtils.validateProductName,
                 ),
-                SizedBox(height: 10),
-                FormBuilderTextField(
+                SizedBox(height: 15),
+                
+                ValidationField(
                   name: 'code',
-                  decoration: InputDecoration(labelText: "Code"),
-                  validator: FormBuilderValidators.compose([
-                    FormBuilderValidators.required(errorText: 'Code is required'),
-                  ]),
+                  label: 'Product Code',
+                  hint: 'Enter product code',
+                  validator: ValidationUtils.validateProductCode,
                 ),
-                SizedBox(height: 10),
-                FormBuilderTextField(
+                SizedBox(height: 15),
+                
+                ValidationField(
                   name: 'price',
-                  decoration: InputDecoration(labelText: "Price"),
-                  keyboardType: TextInputType.number,
-                  validator: FormBuilderValidators.compose([
-                    FormBuilderValidators.required(errorText: 'Price is required'),
-                    FormBuilderValidators.numeric(errorText: 'Price must be a number'),
-                    (value) {
-                      if (value != null && double.tryParse(value) == null) {
-                        return 'Price must be a valid number';
-                      }
-                      return null;
-                    },
-                  ]),
+                  label: 'Price',
+                  hint: 'Enter product price',
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  validator: ValidationUtils.validatePrice,
                 ),
-                SizedBox(height: 10),
-                FormBuilderTextField(
+                SizedBox(height: 15),
+                
+                ValidationField(
                   name: 'description',
-                  decoration: InputDecoration(labelText: "Description"),
-                  validator: FormBuilderValidators.compose([
-                    FormBuilderValidators.required(errorText: 'Description is required'),
-                  ]),
+                  label: 'Description',
+                  hint: 'Enter product description',
+                  maxLines: 3,
+                  maxLength: 500,
+                  validator: ValidationUtils.validateProductDescription,
                 ),
-                SizedBox(height: 10),
-                FormBuilderTextField(
+                SizedBox(height: 15),
+                
+                ValidationField(
                   name: 'amount',
-                  decoration: InputDecoration(labelText: "Amount"),
+                  label: 'Amount',
+                  hint: 'Enter product amount',
                   keyboardType: TextInputType.number,
-                  validator: FormBuilderValidators.compose([
-                    FormBuilderValidators.required(errorText: 'Amount is required'),
-                    FormBuilderValidators.numeric(errorText: 'Amount must be a number'),
-                    (value) {
-                      if (value != null && int.tryParse(value) == null) {
-                        return 'Amount must be a valid integer';
-                      }
-                      return null;
-                    },
-                  ]),
+                  validator: ValidationUtils.validateAmount,
                 ),
-                SizedBox(height: 10),
-                FormBuilderDropdown<String>(
+                SizedBox(height: 15),
+                
+                ValidationDropdown<String>(
                   name: 'brandId',
-                  decoration: InputDecoration(
-                    labelText: 'Brand',
-                    hintText: 'Select Brand',
-                  ),
-                  validator: FormBuilderValidators.compose([
-                    FormBuilderValidators.required(errorText: 'Brand is required'),
-                  ]),
-                  items: (() {
-                    var items = brandResult?.result
-                            ?.map((item) {
-                              return DropdownMenuItem(
-                                  alignment: AlignmentDirectional.center,
-                                  value: item.id?.toString() ?? "",
-                                  child: Text(item.name ?? ""),
-                                );
-                            })
-                            .toList() ??
-                        [];
-                    return items;
-                  })(),
+                  label: 'Brand',
+                  hint: 'Select brand',
+                  validator: (value) => ValidationUtils.validateRequired(value, 'Brand'),
+                  items: _buildBrandItems(),
                 ),
-                SizedBox(height: 10),
-                FormBuilderDropdown<String>(
+                SizedBox(height: 15),
+                
+                ValidationDropdown<String>(
                   name: 'categoryId',
-                  decoration: InputDecoration(
-                    labelText: 'Category',
-                    hintText: 'Select Category',
-                  ),
-                  validator: FormBuilderValidators.compose([
-                    FormBuilderValidators.required(errorText: 'Category is required'),
-                  ]),
-                  items: (() {
-                    var items = categoryResult?.result
-                            ?.map((item) {
-                               return DropdownMenuItem(
-                                  alignment: AlignmentDirectional.center,
-                                  value: item.id?.toString() ?? "",
-                                  child: Text(item.name ?? ""),
-                                );
-                            })
-                            .toList() ??
-                        [];
-                          return items;
-                  })(),
+                  label: 'Category',
+                  hint: 'Select category',
+                  validator: (value) => ValidationUtils.validateRequired(value, 'Category'),
+                  items: _buildCategoryItems(),
                 ),
               ],
             )),
       ),
     );
+  }
+
+  List<DropdownMenuItem<String>> _buildBrandItems() {
+    return brandResult?.result
+        ?.map((item) => DropdownMenuItem(
+              alignment: AlignmentDirectional.center,
+              value: item.id?.toString() ?? "",
+              child: Text(item.name ?? ""),
+            ))
+        .toList() ?? [];
+  }
+
+  List<DropdownMenuItem<String>> _buildCategoryItems() {
+    return categoryResult?.result
+        ?.map((item) => DropdownMenuItem(
+              alignment: AlignmentDirectional.center,
+              value: item.id?.toString() ?? "",
+              child: Text(item.name ?? ""),
+            ))
+        .toList() ?? [];
   }
 }

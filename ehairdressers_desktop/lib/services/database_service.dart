@@ -42,7 +42,21 @@ class DatabaseService {
       var headers = _createHeaders();
 
       var jsonRequest = jsonEncode(employeeData);
+      
+      // Debug logging - print what we're sending to the backend
+      print("=== EMPLOYEE DATA BEING SENT TO BACKEND ===");
+      print("URL: $url");
+      print("Headers: $headers");
+      print("Request Body: $jsonRequest");
+      print("==========================================");
+      
       var response = await http.post(uri, headers: headers, body: jsonRequest);
+
+      // Debug logging - print response from backend
+      print("=== BACKEND RESPONSE ===");
+      print("Status Code: ${response.statusCode}");
+      print("Response Body: ${response.body}");
+      print("========================");
 
       if (_isValidResponse(response)) {
         var data = jsonDecode(response.body);
@@ -57,20 +71,31 @@ class DatabaseService {
 
   static Future<dynamic> createCompleteEmployee(Map<String, dynamic> request, String endpoint) async {
     try {
+      // Debug logging - print raw request data
+      print("=== RAW REQUEST DATA FROM FORM ===");
+      print("Raw request: $request");
+      print("==================================");
+
       // Send data directly to the CreateEmployee endpoint in the exact format specified
       var employeeData = {
         'Name': request['name'],
         'Surname': request['surname'],
         'Email': request['email'],
-        'BirthDate': request['birthDate'] ?? request['hireDate'] ?? DateTime.now().toIso8601String(),
+        'BirthDate': request['birthDate'] ?? DateTime.now().toIso8601String().split('T')[0],
+        'HireDate': request['hireDate'] ?? DateTime.now().toIso8601String().split('T')[0],
         'Address': request['address'] ?? '',
         'CitizenshipNumber': request['citizenshipNumber'],
         'Phone': request['phone'],
         'Username': request['username'],
         'Password': request['password'],
-        'Image': request['image'] ?? 'string', // Send as string like in product insert
+        'Image': request['image'] != null ? request['image'].split(',').last : '', // Remove data:image/jpeg;base64, prefix and send as base64 string
         'Salary': request['salary'] != null ? int.tryParse(request['salary'].toString()) ?? 0 : 0,
       };
+
+      // Debug logging - print processed employee data
+      print("=== PROCESSED EMPLOYEE DATA ===");
+      print("Processed data: $employeeData");
+      print("===============================");
       
       // Use only the CreateEmployee endpoint - it handles everything
       var employee = await createEmployee(employeeData, endpoint);

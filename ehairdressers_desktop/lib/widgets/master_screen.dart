@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import '../screens/reservation_list.dart';
 import '../screens/product_insert_screen.dart';
+import '../screens/products_list_screen.dart';
 import '../screens/employee_add_screen.dart';
 import '../screens/product_sales_report_screen.dart';
 import '../screens/salon_operations_report_screen.dart';
-import '../providers/EmployeeProvider.dart';
-import '../models/SearchResult.dart';
-import '../models/employee.dart';
 import '../models/user.dart';
-import 'package:provider/provider.dart';
 
 class MasterScreenWidget extends StatefulWidget {
   Widget? child;
@@ -21,26 +18,9 @@ class MasterScreenWidget extends StatefulWidget {
 }
 
 class _MasterScreenWidgetState extends State<MasterScreenWidget> {
-  late EmployeeProvider _employeeProvider;
-  SearchResult<Employee>? employeeResult;
-
   @override
   void initState() {
     super.initState();
-
-    _employeeProvider = context.read<EmployeeProvider>();
-    initForm();
-  }
-
-  Future initForm() async {
-    try {
-      employeeResult = await _employeeProvider.get();
-      print(employeeResult?.result?.firstOrNull?.name);
-    } catch (e) {
-      print("Error loading employees: $e");
-      // Set empty result if there's an error
-      employeeResult = SearchResult<Employee>();
-    }
   }
 
   Widget build(BuildContext context) {
@@ -63,6 +43,13 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
               onTap: () {
                 Navigator.of(context).push(MaterialPageRoute(
                     builder: (context) => const ReservationList()));
+              },
+            ),
+            ListTile(
+              title: Text("Products List"),
+              onTap: () {
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => ProductsListScreen()));
               },
             ),
             ListTile(

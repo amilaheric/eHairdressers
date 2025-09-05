@@ -22,10 +22,68 @@ namespace eHairdressers.Services
 
             if (!string.IsNullOrWhiteSpace(search?.Name))
             {
-                filteredQuery = filteredQuery.Where(x=>x.Name.Contains(search.Name));
+                filteredQuery = filteredQuery.Where(x => x.Name.Contains(search.Name));
+            }
+
+            if (search?.BrandId.HasValue == true)
+            {
+                filteredQuery = filteredQuery.Where(x => x.BrandId == search.BrandId.Value);
+            }
+
+            if (search?.CategoryId.HasValue == true)
+            {
+                filteredQuery = filteredQuery.Where(x => x.CategoryId == search.CategoryId.Value);
+            }
+
+            if (search?.MinPrice.HasValue == true)
+            {
+                filteredQuery = filteredQuery.Where(x => x.Price >= (double)search.MinPrice.Value);
+            }
+
+            if (search?.MaxPrice.HasValue == true)
+            {
+                filteredQuery = filteredQuery.Where(x => x.Price <= (double)search.MaxPrice.Value);
             }
 
             return filteredQuery;
+        }
+
+        public override IQueryable<Products> AddSorting(IQueryable<Products> query, ProductsSearchObject? search = null)
+        {
+            if (search?.SortBy != null)
+            {
+                var sortOrder = search.SortOrder?.ToLower() == "desc" ? "desc" : "asc";
+                
+                switch (search.SortBy.ToLower())
+                {
+                    case "name":
+                        query = sortOrder == "desc" ? query.OrderByDescending(x => x.Name) : query.OrderBy(x => x.Name);
+                        break;
+                    case "price":
+                        query = sortOrder == "desc" ? query.OrderByDescending(x => x.Price) : query.OrderBy(x => x.Price);
+                        break;
+                    case "code":
+                        query = sortOrder == "desc" ? query.OrderByDescending(x => x.Code) : query.OrderBy(x => x.Code);
+                        break;
+                    case "categoryid":
+                        query = sortOrder == "desc" ? query.OrderByDescending(x => x.CategoryId) : query.OrderBy(x => x.CategoryId);
+                        break;
+                    case "brandid":
+                        query = sortOrder == "desc" ? query.OrderByDescending(x => x.BrandId) : query.OrderBy(x => x.BrandId);
+                        break;
+                    default:
+                        // Default sort by name if unknown field
+                        query = query.OrderBy(x => x.Name);
+                        break;
+                }
+            }
+            else
+            {
+                // Default sort by name if no sort specified
+                query = query.OrderBy(x => x.Name);
+            }
+            
+            return query;
         }
 
         public override async Task<Model.Products> Insert(ProductInsertRequest insert)

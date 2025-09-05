@@ -1,10 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:ehairdressers_mobile/models/SearchResult.dart';
-import 'package:ehairdressers_mobile/models/user.dart';
-import 'package:ehairdressers_mobile/models/employee.dart';
-import 'package:ehairdressers_mobile/providers/EmployeeProvider.dart';
+import 'package:ehairdressers_mobile/providers/UserProvider.dart';
 import 'package:ehairdressers_mobile/widgets/master_screen.dart';
 import 'package:ehairdressers_mobile/widgets/validation_field.dart';
 import 'package:ehairdressers_mobile/utils/validation_utils.dart';
@@ -12,26 +9,26 @@ import 'package:ehairdressers_mobile/utils/success_messages.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
-import 'package:form_builder_validators/form_builder_validators.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-class EmployeeAdd extends StatefulWidget {
-  User? user;
-  EmployeeAdd({Key? key, this.user}) : super(key: key);
+class UserRegistrationScreen extends StatefulWidget {
   @override
-  State<EmployeeAdd> createState() => _EmployeeAddState();
+  State<UserRegistrationScreen> createState() => _UserRegistrationScreenState();
 }
 
-class _EmployeeAddState extends State<EmployeeAdd> {
+class _UserRegistrationScreenState extends State<UserRegistrationScreen> {
   File? selectedImage;
   String? _base64Image;
-  bool isLoading = true;
+  bool isLoading = false;
   final _formKey = GlobalKey<FormBuilderState>();
-  Map<String, dynamic> _initialValue = {};
-  late EmployeeProvider _employeeProvider;
-  SearchResult<Employee>? employee;
+  late UserProvider _userProvider;
   String defaultImagePath = 'assets/images/default.jpg';
+
+  @override
+  void initState() {
+    super.initState();
+    _userProvider = context.read<UserProvider>();
+  }
 
   Future<void> pickImage() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -44,75 +41,41 @@ class _EmployeeAddState extends State<EmployeeAdd> {
         selectedImage = file;
         _base64Image = base64Encode(selectedImage!.readAsBytesSync());
       });
-    } else {
-     
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _initializeForm();
-  }
-
-  void _initializeForm() {
-    if (widget.user != null) {
-      // Initialize form with existing user data for editing
-      _initialValue = {
-        'name': widget.user!.name ?? '',
-        'surname': widget.user!.surname ?? '',
-        'email': widget.user!.email ?? '',
-        'phone': widget.user!.phone ?? '',
-        'username': widget.user!.username ?? '',
-        'citizenshipNumber': widget.user!.citizenshipNumber ?? '',
-        'birthDate': widget.user!.birthDate ?? '',
-        'address': widget.user!.address ?? '',
-      };
-    } else {
-      _initialValue = {};
-    }
-
-    _employeeProvider = context.read<EmployeeProvider>();
-    initForm();
-  }
-
-  Future initForm() async {
-    try {
-      employee = await _employeeProvider.get();
-      print(employee);
-    } catch (e) {
-      print("Error loading employees: $e");
-      employee = SearchResult<Employee>();
-    }
-
+  void _resetForm() {
+    _formKey.currentState?.reset();
     setState(() {
-      isLoading = false;
+      selectedImage = null;
+      _base64Image = null;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return MasterScreenWidget(
-        title: widget.user == null ? "Add Employee" : "Edit Employee",
+        title: "User Registration",
         child: Container(
             margin: EdgeInsets.only(top: 30),
             child: SingleChildScrollView(
               child: Column(children: [
-                isLoading ? Center(child: CircularProgressIndicator()) : _buildEmployeeform(),
-                SizedBox(height: 30),
+                _buildForm(),
+                SizedBox(height: 20),
                 Align(
                     alignment: Alignment.center,
                     child: ElevatedButton(
-                      onPressed: () async {
+                      onPressed: isLoading ? null : () async {
                         if (_formKey.currentState?.saveAndValidate() ?? false) {
+                          setState(() {
+                            isLoading = true;
+                          });
+
                           var request = Map<String, dynamic>.from(_formKey.currentState!.value);
 
                           // Convert DateTime objects to strings
                           if (request['birthDate'] is DateTime) {
                             request['birthDate'] = (request['birthDate'] as DateTime).toIso8601String().split('T')[0];
-                          }
-                          if (request['hireDate'] is DateTime) {
-                            request['hireDate'] = (request['hireDate'] as DateTime).toIso8601String().split('T')[0];
                           }
 
                           // Add image if selected
@@ -121,20 +84,15 @@ class _EmployeeAddState extends State<EmployeeAdd> {
                           }
 
                           try {
-                            if (widget.user == null) {
-                              // Creating new employee
-                              await _employeeProvider.createEmployeeWithRole(request);
-                              SuccessMessages.showEmployeeCreated(context);
-                              Navigator.pop(context);
-                            } else {
-                              // Updating existing employee
-                              request['userId'] = widget.user!.userId;
-                              await _employeeProvider.update(widget.user!.userId!, request);
-                              SuccessMessages.showEmployeeUpdated(context);
-                              Navigator.pop(context);
-                            }
+                            await _userProvider.insert(request);
+                            SuccessMessages.showUserCreated(context);
+                            _resetForm();
                           } on Exception catch (e) {
                             _showErrorDialog(context, "Error", e.toString());
+                          } finally {
+                            setState(() {
+                              isLoading = false;
+                            });
                           }
                         } else {
                           // Form validation failed
@@ -142,7 +100,23 @@ class _EmployeeAddState extends State<EmployeeAdd> {
                               "Please fix the errors in the form before submitting.");
                         }
                       },
-                      child: Text(widget.user == null ? "Save" : "Update"),
+                      child: isLoading 
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                ),
+                                SizedBox(width: 10),
+                                Text("Registracija..."),
+                              ],
+                            )
+                          : Text("Register User"),
                       style: ElevatedButton.styleFrom(
                           backgroundColor: Color.fromARGB(255, 247, 233, 211),
                           foregroundColor: Color(0x0FF938f94),
@@ -169,10 +143,9 @@ class _EmployeeAddState extends State<EmployeeAdd> {
     );
   }
 
-  FormBuilder _buildEmployeeform() {
+  FormBuilder _buildForm() {
     return FormBuilder(
       key: _formKey,
-      initialValue: _initialValue,
       child: Container(
         alignment: Alignment.center,
         padding: EdgeInsets.all(20),
@@ -198,7 +171,7 @@ class _EmployeeAddState extends State<EmployeeAdd> {
             ElevatedButton.icon(
               onPressed: pickImage,
               icon: Icon(Icons.image),
-              label: Text('Select Image'),
+              label: Text('Odaberi sliku'),
               style: ElevatedButton.styleFrom(
                   backgroundColor: Color.fromARGB(255, 247, 233, 211),
                   foregroundColor: Color(0x0FF938f94)),
@@ -289,57 +262,51 @@ class _EmployeeAddState extends State<EmployeeAdd> {
             ),
             SizedBox(height: 15),
             
-            // Password fields - only required for new employees
-            if (widget.user == null) ...[
-              ValidationField(
-                name: 'password',
-                label: 'Password',
-                hint: 'Enter password',
-                obscureText: true,
-                validator: ValidationUtils.validatePassword,
-              ),
-              SizedBox(height: 15),
-              
-              ValidationField(
-                name: 'passwordconfirm',
-                label: 'Confirm Password',
-                hint: 'Confirm password',
-                obscureText: true,
-                validator: (value) => ValidationUtils.validatePasswordConfirm(
-                  value, _formKey.currentState?.value['password']),
-              ),
-              SizedBox(height: 20),
-            ],
-            
-            // Employment information
-            Text(
-              'Employment Information',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 15),
-            
-            ValidationDateField(
-              name: 'hireDate',
-              label: 'Hire Date',
-              hint: 'Select hire date',
-              firstDate: DateTime(2000),
-              lastDate: DateTime.now(),
-              validator: (value) => ValidationUtils.validatePastDate(
-                value?.toIso8601String().split('T')[0], 'Hire Date'),
+            ValidationField(
+              name: 'password',
+              label: 'Password',
+              hint: 'Enter password',
+              obscureText: true,
+              validator: ValidationUtils.validatePassword,
             ),
             SizedBox(height: 15),
             
             ValidationField(
-              name: 'salary',
-              label: 'Salary',
-              hint: 'Enter salary',
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
-              validator: ValidationUtils.validateSalary,
+              name: 'passwordconfirm',
+              label: 'Confirm Password',
+              hint: 'Confirm password',
+              obscureText: true,
+              validator: (value) => ValidationUtils.validatePasswordConfirm(
+                value, _formKey.currentState?.value['password']),
+            ),
+            SizedBox(height: 20),
+            
+            // Terms and conditions
+            FormBuilderCheckbox(
+              name: 'acceptTerms',
+              title: Text('I accept the terms of use'),
+              validator: (value) {
+                if (value != true) {
+                  return 'You must accept the terms of use';
+                }
+                return null;
+              },
+            ),
+            SizedBox(height: 10),
+            
+            FormBuilderCheckbox(
+              name: 'acceptPrivacy',
+              title: Text('I accept the privacy policy'),
+              validator: (value) {
+                if (value != true) {
+                  return 'You must accept the privacy policy';
+                }
+                return null;
+              },
             ),
           ]),
         ),
       ),
     );
   }
-
 }

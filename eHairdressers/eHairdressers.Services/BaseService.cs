@@ -29,11 +29,12 @@ namespace eHairdressers.Services
 
             query = AddFilter(query, search);
             query = AddInclude(query, search);
+            query = AddSorting(query, search);
 
             result.Count = await query.CountAsync();
 
             if (search?.Page.HasValue == true && search?.PageSize.HasValue == true) {
-            query = query.Take(search.PageSize.Value).Skip(search.Page.Value * search.PageSize.Value);
+            query = query.Skip((search.Page.Value - 1) * search.PageSize.Value).Take(search.PageSize.Value);
             }
 
             var list = await query.ToListAsync();
@@ -50,6 +51,12 @@ namespace eHairdressers.Services
         }
 
         public virtual IQueryable<TDb> AddFilter(IQueryable<TDb> query, TSearch? search = null) {
+            return query;
+        }
+
+        public virtual IQueryable<TDb> AddSorting(IQueryable<TDb> query, TSearch? search = null)
+        {
+            // Default implementation - can be overridden in derived classes
             return query;
         }
     }
