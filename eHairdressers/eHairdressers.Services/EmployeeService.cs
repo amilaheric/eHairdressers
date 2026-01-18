@@ -1,4 +1,7 @@
+using AutoMapper;
+using eHairdressers.Model;
 using eHairdressers.Model.Requests;
+using eHairdressers.Model.SearchObjects;
 using eHairdressers.Services.Database;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
@@ -6,13 +9,65 @@ using System.Text;
 
 namespace eHairdressers.Services
 {
-    public class EmployeeService : IEmployeeService
+    public class EmployeeService : BaseService<Model.Employees, Database.Employees, EmployeeSearchObject>, IEmployeeService
     {
-        private readonly eHairdressersContext _context;
-
-        public EmployeeService(eHairdressersContext context)
+        public EmployeeService(eHairdressersContext context, IMapper mapper) : base(context, mapper)
         {
-            _context = context;
+        }
+
+        public override IQueryable<Database.Employees> AddInclude(IQueryable<Database.Employees> query, EmployeeSearchObject? search = null)
+        {
+            return query.Include(e => e.User);
+        }
+
+        public override IQueryable<Database.Employees> AddFilter(IQueryable<Database.Employees> query, EmployeeSearchObject? search = null)
+        {
+            if (!string.IsNullOrWhiteSpace(search?.Name))
+            {
+                query = query.Where(x => x.Name.Contains(search.Name));
+            }
+
+            if (!string.IsNullOrWhiteSpace(search?.Surname))
+            {
+                query = query.Where(x => x.Surname.Contains(search.Surname));
+            }
+
+            return query;
+        }
+
+        public override IQueryable<Database.Employees> AddSorting(IQueryable<Database.Employees> query, EmployeeSearchObject? search = null)
+        {
+            if (search?.SortBy != null)
+            {
+                var sortOrder = search.SortOrder?.ToLower() == "desc" ? "desc" : "asc";
+
+                switch (search.SortBy.ToLower())
+                {
+                    case "name":
+                        query = sortOrder == "desc" ? query.OrderByDescending(x => x.Name) : query.OrderBy(x => x.Name);
+                        break;
+                    case "surname":
+                        query = sortOrder == "desc" ? query.OrderByDescending(x => x.Surname) : query.OrderBy(x => x.Surname);
+                        break;
+                    case "hiredate":
+                        query = sortOrder == "desc" ? query.OrderByDescending(x => x.HireDate) : query.OrderBy(x => x.HireDate);
+                        break;
+                    case "salary":
+                        query = sortOrder == "desc" ? query.OrderByDescending(x => x.Salary) : query.OrderBy(x => x.Salary);
+                        break;
+                    default:
+                        // Default sort by surname if unknown field
+                        query = query.OrderBy(x => x.Surname).ThenBy(x => x.Name);
+                        break;
+                }
+            }
+            else
+            {
+                // Default sort by surname if no sort specified
+                query = query.OrderBy(x => x.Surname).ThenBy(x => x.Name);
+            }
+
+            return query;
         }
 
         public async Task<(int userId, int employeeId)> CreateEmployee(CreateEmployeeRequest request)
@@ -120,7 +175,7 @@ namespace eHairdressers.Services
             }
         }
 
-        public async Task<List<Employees>> GetAllEmployees()
+        public async Task<List<Database.Employees>> GetAllEmployees()
         {
             return await _context.Employees
                 .Include(e => e.User)  
@@ -129,7 +184,7 @@ namespace eHairdressers.Services
                 .ToListAsync();
         }
 
-        public async Task<Employees?> GetEmployeeById(int employeeId)
+        public async Task<Database.Employees?> GetEmployeeById(int employeeId)
         {
             return await _context.Employees
                 .Include(e => e.User)  

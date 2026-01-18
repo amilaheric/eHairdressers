@@ -1,26 +1,26 @@
 import 'dart:async';
+import 'package:ehairdressers_mobile/models/employee.dart';
 import 'package:ehairdressers_mobile/models/SearchResult.dart';
-import 'package:ehairdressers_mobile/models/appointment.dart';
-import 'package:ehairdressers_mobile/providers/AppointmentProvider.dart';
+import 'package:ehairdressers_mobile/providers/EmployeeProvider.dart';
 import 'package:ehairdressers_mobile/widgets/master_screen.dart';
+import 'package:ehairdressers_mobile/screens/employee_add_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
-class ReservationList extends StatefulWidget {
-  const ReservationList({Key? key}) : super(key: key);
-
+class EmployeeListScreen extends StatefulWidget {
   @override
-  State<ReservationList> createState() => _ReservationListState();
+  _EmployeeListScreenState createState() => _EmployeeListScreenState();
 }
 
-class _ReservationListState extends State<ReservationList> {
-  late AppointmentProvider _appointmentProvider;
+class _EmployeeListScreenState extends State<EmployeeListScreen> {
+  late EmployeeProvider _employeeProvider;
   bool isLoading = true;
   bool hasError = false;
   String errorMessage = '';
-  List<Appointment> appointments = [];
-  List<Appointment> filteredAppointments = [];
+  List<Employee> employees = [];
+  List<Employee> filteredEmployees = [];
   
   // Pagination
   int currentPage = 1;
@@ -30,16 +30,16 @@ class _ReservationListState extends State<ReservationList> {
   
   // Filtering
   String searchQuery = '';
-  String? minDate;
-  String? maxDate;
-  int? selectedEmployeeId;
-  int? selectedServiceId;
+  int? minSalary;
+  int? maxSalary;
+  String? minHireDate;
+  String? maxHireDate;
   
   // Filter state
   bool showFilters = false;
   
   // Sorting
-  String sortField = 'appointmentDate';
+  String sortField = 'name';
   bool sortAscending = true;
   
   // Search debounce
@@ -48,14 +48,14 @@ class _ReservationListState extends State<ReservationList> {
   @override
   void initState() {
     super.initState();
-    _appointmentProvider = Provider.of<AppointmentProvider>(context, listen: false);
+    _employeeProvider = Provider.of<EmployeeProvider>(context, listen: false);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _appointmentProvider = context.read<AppointmentProvider>();
-    _loadAppointments();
+    _employeeProvider = context.read<EmployeeProvider>();
+    _loadEmployees();
   }
 
   @override
@@ -64,7 +64,7 @@ class _ReservationListState extends State<ReservationList> {
     super.dispose();
   }
 
-  Future<void> _loadAppointments() async {
+  Future<void> _loadEmployees() async {
     try {
       setState(() {
         isLoading = true;
@@ -72,31 +72,50 @@ class _ReservationListState extends State<ReservationList> {
         errorMessage = '';
       });
       
-      print("=== LOADING APPOINTMENTS ===");
+      print("=== LOADING EMPLOYEES ===");
       print("Page: $currentPage, PageSize: $itemsPerPage, Search: $searchQuery");
       print("SortBy: $sortField, SortOrder: ${sortAscending ? 'asc' : 'desc'}");
-      print("Date range: $minDate - $maxDate");
+      print("Salary range: $minSalary - $maxSalary");
+      print("Hire date range: $minHireDate - $maxHireDate");
       
-      // Load all appointments (filtering applied client-side)
-      SearchResult<Appointment> result = await _appointmentProvider.get(filter: null);
+      // Load all employees without query parameters (backend doesn't support them yet)
+      // Apply client-side filtering, sorting, and pagination
+      print("Loading all employees (client-side filtering will be applied)...");
       
-      print("Appointments result: $result");
-      print("Appointments count: ${result.result.length}");
-      print("Total count from backend: ${result.count}");
+      SearchResult<Employee> result = await _employeeProvider.get(filter: null);
+      
+      print("Employees result: $result");
+      print("Employees count: ${result.result.length}");
+      print("Employees data: ${result.result}");
+      
+      // Debug: Print detailed employee information
+      for (var emp in result.result) {
+        print("Employee details:");
+        print("  EmployeeId: ${emp.employeeId}");
+        print("  UserId: ${emp.userId}");
+        print("  Name: ${emp.name}");
+        print("  Surname: ${emp.surname}");
+        print("  Phone: ${emp.phone}");
+        print("  HireDate: ${emp.hireDate}");
+        print("  BirthDate: ${emp.birthDate}");
+        print("  Address: ${emp.address}");
+        print("  CitizenshipNumber: ${emp.citizenshipNumber}");
+        print("  Salary: ${emp.salary}");
+      }
       print("========================");
       
       setState(() {
-        appointments = result.result;
+        employees = result.result;
         
-        // Apply client-side filtering, sorting, and pagination
-        List<Appointment> allFiltered = _getFilteredAndSortedAppointments();
+        // Apply client-side filtering and sorting
+        List<Employee> allFiltered = _getFilteredAndSortedEmployees();
         totalCount = allFiltered.length;
         totalPages = (totalCount / itemsPerPage).ceil();
         
         // Apply pagination to filtered list
         int startIndex = (currentPage - 1) * itemsPerPage;
         int endIndex = startIndex + itemsPerPage;
-        filteredAppointments = allFiltered.sublist(
+        filteredEmployees = allFiltered.sublist(
           startIndex.clamp(0, allFiltered.length),
           endIndex.clamp(0, allFiltered.length),
         );
@@ -108,74 +127,63 @@ class _ReservationListState extends State<ReservationList> {
       setState(() {
         isLoading = false;
         hasError = true;
-        errorMessage = "Error loading appointments: $e";
+        errorMessage = "Error loading employees: $e";
       });
-      print("Error loading appointments: $e");
+      print("Error loading employees: $e");
     }
   }
 
-  List<Appointment> _getFilteredAndSortedAppointments() {
-    List<Appointment> filtered = List.from(appointments);
+  List<Employee> _getFilteredAndSortedEmployees() {
+    List<Employee> filtered = List.from(employees);
     
     // Apply search filter
     if (searchQuery.isNotEmpty) {
-      filtered = filtered.where((apt) {
+      filtered = filtered.where((emp) {
         final query = searchQuery.toLowerCase();
-        final employeeName = (apt.employeeName ?? '').toLowerCase();
-        final username = (apt.username ?? '').toLowerCase();
-        final serviceName = (apt.serviceName ?? '').toLowerCase();
-        final comment = (apt.comment ?? '').toLowerCase();
-        return employeeName.contains(query) || 
-               username.contains(query) || 
-               serviceName.contains(query) ||
-               comment.contains(query);
+        final name = (emp.name ?? '').toLowerCase();
+        final surname = (emp.surname ?? '').toLowerCase();
+        final phone = (emp.phone ?? '').toLowerCase();
+        return name.contains(query) || surname.contains(query) || phone.contains(query);
       }).toList();
     }
     
-    // Apply date range filter
-    if ((minDate != null && minDate!.isNotEmpty) || 
-        (maxDate != null && maxDate!.isNotEmpty)) {
-      filtered = filtered.where((apt) {
-        if (apt.appointmentDate == null || apt.appointmentDate!.isEmpty) return false;
-        final aptDate = apt.appointmentDate!;
-        if (minDate != null && minDate!.isNotEmpty && aptDate.compareTo(minDate!) < 0) return false;
-        if (maxDate != null && maxDate!.isNotEmpty && aptDate.compareTo(maxDate!) > 0) return false;
+    // Apply salary filter
+    if (minSalary != null || maxSalary != null) {
+      filtered = filtered.where((emp) {
+        final salary = emp.salary ?? 0;
+        if (minSalary != null && salary < minSalary!) return false;
+        if (maxSalary != null && salary > maxSalary!) return false;
         return true;
       }).toList();
     }
     
-    // Apply employee filter
-    if (selectedEmployeeId != null) {
-      filtered = filtered.where((apt) => apt.employeeId == selectedEmployeeId).toList();
-    }
-    
-    // Apply service filter
-    if (selectedServiceId != null) {
-      filtered = filtered.where((apt) => apt.serviceId == selectedServiceId).toList();
+    // Apply hire date filter
+    if ((minHireDate != null && minHireDate!.isNotEmpty) || 
+        (maxHireDate != null && maxHireDate!.isNotEmpty)) {
+      filtered = filtered.where((emp) {
+        if (emp.hireDate == null || emp.hireDate!.isEmpty) return false;
+        final hireDate = emp.hireDate!;
+        if (minHireDate != null && minHireDate!.isNotEmpty && hireDate.compareTo(minHireDate!) < 0) return false;
+        if (maxHireDate != null && maxHireDate!.isNotEmpty && hireDate.compareTo(maxHireDate!) > 0) return false;
+        return true;
+      }).toList();
     }
     
     // Apply sorting
     filtered.sort((a, b) {
       int compareResult = 0;
       switch (sortField) {
-        case 'appointmentDate':
-          compareResult = (a.appointmentDate ?? '').compareTo(b.appointmentDate ?? '');
-          if (compareResult == 0) {
-            // If dates are same, sort by time
-            compareResult = (a.appointmentTime ?? '').compareTo(b.appointmentTime ?? '');
-          }
+        case 'name':
+          compareResult = (a.name ?? '').compareTo(b.name ?? '');
           break;
-        case 'appointmentTime':
-          compareResult = (a.appointmentTime ?? '').compareTo(b.appointmentTime ?? '');
+        case 'surname':
+          compareResult = (a.surname ?? '').compareTo(b.surname ?? '');
           break;
-        case 'employeeName':
-          compareResult = (a.employeeName ?? '').compareTo(b.employeeName ?? '');
+        case 'hireDate':
+          compareResult = (a.hireDate ?? '').compareTo(b.hireDate ?? '');
           break;
-        case 'serviceName':
-          compareResult = (a.serviceName ?? '').compareTo(b.serviceName ?? '');
-          break;
-        case 'username':
-          compareResult = (a.username ?? '').compareTo(b.username ?? '');
+        case 'salary':
+          compareResult = (a.salary ?? 0).compareTo(b.salary ?? 0);
           break;
         default:
           compareResult = 0;
@@ -186,71 +194,16 @@ class _ReservationListState extends State<ReservationList> {
     return filtered;
   }
 
-  String _formatDate(String? dateString) {
-    if (dateString == null || dateString.isEmpty) {
-      return '';
-    }
-    
-    // Extract only the date part (strip time, timezone, etc.)
-    String dateOnly = dateString.trim();
-    if (dateOnly.contains('T')) {
-      dateOnly = dateOnly.split('T')[0];
-    } else if (dateOnly.contains(' ')) {
-      dateOnly = dateOnly.split(' ')[0];
-    }
-    
-    try {
-      // Try ISO format first (yyyy-MM-dd)
-      return DateFormat('dd/MM/yyyy').format(DateTime.parse(dateOnly));
-    } catch (_) {
-      // Try MM/dd/yyyy (e.g. "07/22/2025" from API)
-      try {
-        final date = DateFormat('MM/dd/yyyy').parse(dateOnly);
-        return DateFormat('dd/MM/yyyy').format(date);
-      } catch (_) {
-        // Try to reorder yyyy-MM-dd or return as-is
-        final parts = dateOnly.split('-');
-        if (parts.length == 3 && parts[0].length == 4) {
-          return '${parts[2]}/${parts[1]}/${parts[0]}';
-        }
-        return dateOnly;
-      }
-    }
-  }
-
-  String _formatTime(String? timeString) {
-    if (timeString == null || timeString.isEmpty) {
-      return '';
-    }
-    
-    try {
-      // Handle full ISO datetime (e.g. "2024-01-15T10:30:00")
-      if (timeString.contains('T')) {
-        DateTime dt = DateTime.parse(timeString);
-        return DateFormat('HH:mm').format(dt);
-      }
-      // Handle time-only strings (e.g. "10:30" or "10:30:00")
-      final parts = timeString.split(':');
-      if (parts.length >= 2) {
-        final h = int.tryParse(parts[0]) ?? 0;
-        final m = int.tryParse(parts[1]) ?? 0;
-        return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
-      }
-      return timeString;
-    } catch (e) {
-      return timeString;
-    }
-  }
-
   void _onSearchChanged(String query) {
     setState(() {
       searchQuery = query;
-      currentPage = 1;
+      currentPage = 1; // Reset to first page when searching
     });
     
+    // Debounce search to avoid too many API calls
     _searchTimer?.cancel();
     _searchTimer = Timer(Duration(milliseconds: 500), () {
-      _loadAppointments();
+      _loadEmployees(); // Reload with new search
     });
   }
   
@@ -262,68 +215,61 @@ class _ReservationListState extends State<ReservationList> {
         sortField = field;
         sortAscending = true;
       }
-      currentPage = 1;
+      currentPage = 1; // Reset to first page when sorting
     });
-    _loadAppointments();
+    _loadEmployees(); // Reload with new sort
   }
   
   void _onPageChanged(int page) {
     setState(() {
       currentPage = page;
     });
-    _loadAppointments();
+    _loadEmployees(); // Reload with new page
   }
 
-  void _onDateRangeChanged(String? min, String? max) {
+  void _onSalaryRangeChanged(int? min, int? max) {
     setState(() {
-      minDate = min;
-      maxDate = max;
-      currentPage = 1;
+      minSalary = min;
+      maxSalary = max;
+      currentPage = 1; // Reset to first page
     });
-    _loadAppointments();
+    _loadEmployees();
   }
 
-  void _onEmployeeFilterChanged(int? employeeId) {
+  void _onHireDateRangeChanged(String? min, String? max) {
     setState(() {
-      selectedEmployeeId = employeeId;
-      currentPage = 1;
+      minHireDate = min;
+      maxHireDate = max;
+      currentPage = 1; // Reset to first page
     });
-    _loadAppointments();
-  }
-
-  void _onServiceFilterChanged(int? serviceId) {
-    setState(() {
-      selectedServiceId = serviceId;
-      currentPage = 1;
-    });
-    _loadAppointments();
+    _loadEmployees();
   }
 
   void _clearFilters() {
     setState(() {
-      minDate = null;
-      maxDate = null;
-      selectedEmployeeId = null;
-      selectedServiceId = null;
+      minSalary = null;
+      maxSalary = null;
+      minHireDate = null;
+      maxHireDate = null;
       currentPage = 1;
     });
-    _loadAppointments();
+    _loadEmployees();
   }
 
-  Future<void> _deleteAppointment(Appointment appointment) async {
+  Future<void> _deleteEmployee(Employee employee) async {
     try {
-      if (appointment.appointmentId != null) {
-        await _appointmentProvider.delete(appointment.appointmentId!);
-        _loadAppointments();
+      if (employee.employeeId != null) {
+        await _employeeProvider.delete(employee.employeeId!);
+        _loadEmployees(); // Refresh the list
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Appointment deleted successfully!'),
+            content: Text('Employee deleted successfully!'),
             backgroundColor: Colors.green,
           ),
         );
       }
     } catch (e) {
-      _showErrorDialog("Error deleting appointment: $e");
+      _showErrorDialog("Error deleting employee: $e");
     }
   }
 
@@ -343,14 +289,37 @@ class _ReservationListState extends State<ReservationList> {
     );
   }
 
-  void _showDeleteConfirmation(Appointment appointment) {
-    String appointmentInfo = '${appointment.employeeName ?? "Unknown"} - ${appointment.appointmentTime ?? "No time"}';
+  String _formatDate(String? dateString) {
+    if (dateString == null || dateString.isEmpty) {
+      return '';
+    }
+    
+    try {
+      // Try to parse as ISO 8601 DateTime string (e.g., "2024-01-15T10:30:00" or "2024-01-15T10:30:00Z")
+      DateTime date = DateTime.parse(dateString);
+      // Format as readable date (e.g., "Jan 15, 2024" or "2024-01-15")
+      return DateFormat('yyyy-MM-dd').format(date);
+    } catch (e) {
+      // If parsing fails, try to extract just the date part if it's in ISO format
+      if (dateString.contains('T')) {
+        return dateString.split('T')[0];
+      }
+      // If it's already a date string, return as is
+      return dateString;
+    }
+  }
+
+  void _showDeleteConfirmation(Employee employee) {
+    String employeeName = '${employee.name ?? ''} ${employee.surname ?? ''}'.trim();
+    if (employeeName.isEmpty) {
+      employeeName = 'this employee';
+    }
     
     showDialog(
       context: context,
       builder: (BuildContext context) => AlertDialog(
-        title: Text("Delete Appointment"),
-        content: Text("Are you sure you want to delete appointment '$appointmentInfo'?"),
+        title: Text("Delete Employee"),
+        content: Text("Are you sure you want to delete '$employeeName'?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -359,7 +328,7 @@ class _ReservationListState extends State<ReservationList> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              _deleteAppointment(appointment);
+              _deleteEmployee(employee);
             },
             child: Text("Delete", style: TextStyle(color: Colors.red))
           )
@@ -371,7 +340,7 @@ class _ReservationListState extends State<ReservationList> {
   @override
   Widget build(BuildContext context) {
     return MasterScreenWidget(
-      title: "Reservations",
+      title: "Employees List",
       child: Container(
         margin: EdgeInsets.only(top: 30),
         child: SingleChildScrollView(
@@ -385,7 +354,7 @@ class _ReservationListState extends State<ReservationList> {
                   // Search Bar
                   TextField(
                     decoration: InputDecoration(
-                      hintText: 'Search appointments by employee, user, service ...',
+                      hintText: 'Search employees by name, surname, or phone...',
                       prefixIcon: Icon(Icons.search),
                       border: OutlineInputBorder(),
                       suffixIcon: searchQuery.isNotEmpty
@@ -402,6 +371,27 @@ class _ReservationListState extends State<ReservationList> {
                   // Action Buttons
                   Row(
                     children: [
+                      // Add Employee Button
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => EmployeeAdd(),
+                            ),
+                          ).then((_) {
+                            // Refresh list when returning from add screen
+                            _loadEmployees();
+                          });
+                        },
+                        icon: Icon(Icons.add),
+                        label: Text('Add Employee'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                      SizedBox(width: 16),
                       // Filter Toggle Button
                       ElevatedButton.icon(
                         onPressed: () {
@@ -417,8 +407,9 @@ class _ReservationListState extends State<ReservationList> {
                         ),
                       ),
                       SizedBox(width: 16),
-                      if (minDate != null || maxDate != null || 
-                          selectedEmployeeId != null || selectedServiceId != null)
+                      if (minSalary != null || maxSalary != null || 
+                          (minHireDate != null && minHireDate!.isNotEmpty) || 
+                          (maxHireDate != null && maxHireDate!.isNotEmpty))
                         ElevatedButton.icon(
                           onPressed: _clearFilters,
                           icon: Icon(Icons.clear),
@@ -443,20 +434,22 @@ class _ReservationListState extends State<ReservationList> {
                             Text('Advanced Filters', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                             SizedBox(height: 16),
                             
-                            // Date Range Filter
-                            Text('Date Range:', style: TextStyle(fontWeight: FontWeight.bold)),
+                            // Salary Range Filter
+                            Text('Salary Range:', style: TextStyle(fontWeight: FontWeight.bold)),
                             SizedBox(height: 8),
                             Row(
                               children: [
                                 Expanded(
                                   child: TextField(
                                     decoration: InputDecoration(
-                                      labelText: 'Min Date (YYYY-MM-DD)',
+                                      labelText: 'Min Salary',
                                       border: OutlineInputBorder(),
-                                      prefixIcon: Icon(Icons.calendar_today),
+                                      prefixText: '\$',
                                     ),
+                                    keyboardType: TextInputType.number,
                                     onChanged: (value) {
-                                      _onDateRangeChanged(value.isNotEmpty ? value : null, maxDate);
+                                      int? min = int.tryParse(value);
+                                      _onSalaryRangeChanged(min, maxSalary);
                                     },
                                   ),
                                 ),
@@ -464,12 +457,48 @@ class _ReservationListState extends State<ReservationList> {
                                 Expanded(
                                   child: TextField(
                                     decoration: InputDecoration(
-                                      labelText: 'Max Date (YYYY-MM-DD)',
+                                      labelText: 'Max Salary',
+                                      border: OutlineInputBorder(),
+                                      prefixText: '\$',
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    onChanged: (value) {
+                                      int? max = int.tryParse(value);
+                                      _onSalaryRangeChanged(minSalary, max);
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 16),
+                            
+                            // Hire Date Range Filter
+                            Text('Hire Date Range:', style: TextStyle(fontWeight: FontWeight.bold)),
+                            SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    decoration: InputDecoration(
+                                      labelText: 'Min Hire Date (YYYY-MM-DD)',
                                       border: OutlineInputBorder(),
                                       prefixIcon: Icon(Icons.calendar_today),
                                     ),
                                     onChanged: (value) {
-                                      _onDateRangeChanged(minDate, value.isNotEmpty ? value : null);
+                                      _onHireDateRangeChanged(value.isNotEmpty ? value : null, maxHireDate);
+                                    },
+                                  ),
+                                ),
+                                SizedBox(width: 16),
+                                Expanded(
+                                  child: TextField(
+                                    decoration: InputDecoration(
+                                      labelText: 'Max Hire Date (YYYY-MM-DD)',
+                                      border: OutlineInputBorder(),
+                                      prefixIcon: Icon(Icons.calendar_today),
+                                    ),
+                                    onChanged: (value) {
+                                      _onHireDateRangeChanged(minHireDate, value.isNotEmpty ? value : null);
                                     },
                                   ),
                                 ),
@@ -490,11 +519,10 @@ class _ReservationListState extends State<ReservationList> {
                       DropdownButton<String>(
                         value: sortField,
                         items: [
-                          DropdownMenuItem(value: 'appointmentDate', child: Text('Date')),
-                          DropdownMenuItem(value: 'appointmentTime', child: Text('Time')),
-                          DropdownMenuItem(value: 'employeeName', child: Text('Employee')),
-                          DropdownMenuItem(value: 'serviceName', child: Text('Service')),
-                          DropdownMenuItem(value: 'username', child: Text('User')),
+                          DropdownMenuItem(value: 'name', child: Text('Name')),
+                          DropdownMenuItem(value: 'surname', child: Text('Surname')),
+                          DropdownMenuItem(value: 'hireDate', child: Text('Hire Date')),
+                          DropdownMenuItem(value: 'salary', child: Text('Salary')),
                         ],
                         onChanged: (value) {
                           if (value != null) _onSortChanged(value);
@@ -514,7 +542,7 @@ class _ReservationListState extends State<ReservationList> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Showing ${filteredAppointments.length} of $totalCount appointments',
+                        'Showing ${filteredEmployees.length} of $totalCount employees',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Row(
@@ -532,7 +560,7 @@ class _ReservationListState extends State<ReservationList> {
                                   itemsPerPage = value;
                                   currentPage = 1;
                                 });
-                                _loadAppointments();
+                                _loadEmployees(); // Reload with new page size
                               }
                             },
                           ),
@@ -544,9 +572,9 @@ class _ReservationListState extends State<ReservationList> {
               ),
             ),
             
-            // Appointments Table
+            // Employees Table
             Container(
-              height: 400,
+              height: 400, // Fixed height for the table
               child: isLoading
                   ? Center(child: CircularProgressIndicator())
                   : hasError
@@ -563,7 +591,7 @@ class _ReservationListState extends State<ReservationList> {
                               ),
                               SizedBox(height: 16),
                               ElevatedButton(
-                                onPressed: _loadAppointments,
+                                onPressed: _loadEmployees,
                                 child: Text("Retry"),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Color.fromARGB(255, 247, 233, 211),
@@ -573,12 +601,10 @@ class _ReservationListState extends State<ReservationList> {
                             ],
                           ),
                         )
-                      : filteredAppointments.isEmpty
+                      : filteredEmployees.isEmpty
                           ? Center(
                               child: Text(
-                                searchQuery.isNotEmpty || minDate != null || maxDate != null 
-                                    ? "No appointments match your search" 
-                                    : "No appointments found",
+                                searchQuery.isNotEmpty ? "No employees match your search" : "No employees found",
                                 style: TextStyle(fontSize: 18, color: Colors.grey),
                               ),
                             )
@@ -588,11 +614,11 @@ class _ReservationListState extends State<ReservationList> {
                             columns: [
                               DataColumn(
                                 label: GestureDetector(
-                                  onTap: () => _onSortChanged('appointmentDate'),
+                                  onTap: () => _onSortChanged('name'),
                                   child: Row(
                                     children: [
-                                      Text("Date", style: TextStyle(fontWeight: FontWeight.bold)),
-                                      if (sortField == 'appointmentDate')
+                                      Text("Name", style: TextStyle(fontWeight: FontWeight.bold)),
+                                      if (sortField == 'name')
                                         Icon(sortAscending ? Icons.arrow_upward : Icons.arrow_downward, size: 16),
                                     ],
                                   ),
@@ -600,47 +626,47 @@ class _ReservationListState extends State<ReservationList> {
                               ),
                               DataColumn(
                                 label: GestureDetector(
-                                  onTap: () => _onSortChanged('appointmentTime'),
+                                  onTap: () => _onSortChanged('surname'),
                                   child: Row(
                                     children: [
-                                      Text("Time", style: TextStyle(fontWeight: FontWeight.bold)),
-                                      if (sortField == 'appointmentTime')
+                                      Text("Surname", style: TextStyle(fontWeight: FontWeight.bold)),
+                                      if (sortField == 'surname')
                                         Icon(sortAscending ? Icons.arrow_upward : Icons.arrow_downward, size: 16),
                                     ],
                                   ),
                                 ),
                               ),
                               DataColumn(
+                                label: Text("Phone", style: TextStyle(fontWeight: FontWeight.bold)),
+                              ),
+                              DataColumn(
                                 label: GestureDetector(
-                                  onTap: () => _onSortChanged('employeeName'),
+                                  onTap: () => _onSortChanged('hireDate'),
                                   child: Row(
                                     children: [
-                                      Text("Employee", style: TextStyle(fontWeight: FontWeight.bold)),
-                                      if (sortField == 'employeeName')
+                                      Text("Hire Date", style: TextStyle(fontWeight: FontWeight.bold)),
+                                      if (sortField == 'hireDate')
                                         Icon(sortAscending ? Icons.arrow_upward : Icons.arrow_downward, size: 16),
                                     ],
                                   ),
                                 ),
                               ),
                               DataColumn(
-                                label: GestureDetector(
-                                  onTap: () => _onSortChanged('username'),
-                                  child: Row(
-                                    children: [
-                                      Text("User", style: TextStyle(fontWeight: FontWeight.bold)),
-                                      if (sortField == 'username')
-                                        Icon(sortAscending ? Icons.arrow_upward : Icons.arrow_downward, size: 16),
-                                    ],
-                                  ),
-                                ),
+                                label: Text("Birth Date", style: TextStyle(fontWeight: FontWeight.bold)),
+                              ),
+                              DataColumn(
+                                label: Text("Address", style: TextStyle(fontWeight: FontWeight.bold)),
+                              ),
+                              DataColumn(
+                                label: Text("Citizenship Number", style: TextStyle(fontWeight: FontWeight.bold)),
                               ),
                               DataColumn(
                                 label: GestureDetector(
-                                  onTap: () => _onSortChanged('serviceName'),
+                                  onTap: () => _onSortChanged('salary'),
                                   child: Row(
                                     children: [
-                                      Text("Service", style: TextStyle(fontWeight: FontWeight.bold)),
-                                      if (sortField == 'serviceName')
+                                      Text("Salary", style: TextStyle(fontWeight: FontWeight.bold)),
+                                      if (sortField == 'salary')
                                         Icon(sortAscending ? Icons.arrow_upward : Icons.arrow_downward, size: 16),
                                     ],
                                   ),
@@ -648,18 +674,21 @@ class _ReservationListState extends State<ReservationList> {
                               ),
                               DataColumn(label: Text("Actions", style: TextStyle(fontWeight: FontWeight.bold))),
                             ],
-                            rows: filteredAppointments.map((appointment) {
+                            rows: filteredEmployees.map((employee) {
                               return DataRow(
                                 cells: [
-                                  DataCell(Text(_formatDate(appointment.appointmentDate))),
-                                  DataCell(Text(_formatTime(appointment.appointmentTime))),
-                                  DataCell(Text(appointment.employeeName ?? "")),
-                                  DataCell(Text(appointment.username ?? "")),
-                                  DataCell(Text(appointment.serviceName ?? "")),
+                                  DataCell(Text(employee.name ?? "")),
+                                  DataCell(Text(employee.surname ?? "")),
+                                  DataCell(Text(employee.phone ?? "")),
+                                  DataCell(Text(_formatDate(employee.hireDate))),
+                                  DataCell(Text(_formatDate(employee.birthDate))),
+                                  DataCell(Text(employee.address ?? "")),
+                                  DataCell(Text(employee.citizenshipNumber ?? "")),
+                                  DataCell(Text(employee.salary?.toString() ?? "")),
                                   DataCell(
                                     IconButton(
                                       icon: Icon(Icons.delete, color: Colors.red),
-                                      onPressed: () => _showDeleteConfirmation(appointment),
+                                      onPressed: () => _showDeleteConfirmation(employee),
                                     ),
                                   ),
                                 ],
@@ -685,12 +714,13 @@ class _ReservationListState extends State<ReservationList> {
                       onPressed: currentPage > 1 ? () => _onPageChanged(currentPage - 1) : null,
                     ),
                     ...List.generate(
-                      totalPages.clamp(0, 5),
+                      totalPages.clamp(0, 5), // Show max 5 page numbers
                       (index) {
                         int pageNumber;
                         if (totalPages <= 5) {
                           pageNumber = index + 1;
                         } else {
+                          // Show pages around current page
                           int startPage = (currentPage - 2).clamp(1, totalPages - 4);
                           pageNumber = startPage + index;
                         }

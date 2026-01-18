@@ -4,15 +4,25 @@ part 'employee.g.dart';
 
 @JsonSerializable()
 class Employee {
+  @JsonKey(name: 'EmployeeId')
   int? employeeId;
+  @JsonKey(name: 'UserId')
   int? userId;
+  @JsonKey(name: 'Name')
   String? name;
+  @JsonKey(name: 'Surname')
   String? surname;
+  @JsonKey(name: 'HireDate')
   String? hireDate;
+  @JsonKey(name: 'BirthDate')
   String? birthDate;
+  @JsonKey(name: 'Address')
   String? address;
+  @JsonKey(name: 'CitizenshipNumber')
   String? citizenshipNumber;
+  @JsonKey(name: 'Phone')
   String? phone;
+  @JsonKey(name: 'Salary')
   int? salary;
 
   Employee({

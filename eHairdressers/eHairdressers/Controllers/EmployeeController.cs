@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using eHairdressers.Model.Requests;
+using eHairdressers.Model.SearchObjects;
 using eHairdressers.Services;
 
 namespace eHairdressers.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("[controller]")]
     public class EmployeeController : ControllerBase
     {
         private readonly IEmployeeService _employeeService;
@@ -57,6 +58,24 @@ namespace eHairdressers.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> Get([FromQuery] EmployeeSearchObject? search = null)
+        {
+            try
+            {
+                var result = await _employeeService.Get(search);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving employees");
+                return BadRequest(new { 
+                    success = false, 
+                    message = ex.Message 
+                });
+            }
+        }
+
+        [HttpGet("all")]
         public async Task<IActionResult> GetAllEmployees()
         {
             try

@@ -1,6 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:path_provider/path_provider.dart';
+import 'package:printing/printing.dart';
 import '../models/salon_operations_report.dart';
 import '../providers/SalonOperationsReportProvider.dart';
 import '../widgets/master_screen.dart';
@@ -260,11 +265,25 @@ class _SalonOperationsReportScreenState extends State<SalonOperationsReportScree
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Text(
-                  'Period: ${DateFormat('MMM dd').format(_reportData!.startDate!)} - ${DateFormat('MMM dd, yyyy').format(_reportData!.endDate!)}',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      'Period: ${DateFormat('MMM dd').format(_reportData!.startDate!)} - ${DateFormat('MMM dd, yyyy').format(_reportData!.endDate!)}',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    ElevatedButton.icon(
+                      onPressed: _exportToPdf,
+                      icon: Icon(Icons.picture_as_pdf, size: 20),
+                      label: Text('Export to PDF'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red[700],
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -402,6 +421,113 @@ class _SalonOperationsReportScreenState extends State<SalonOperationsReportScree
         ],
       ),
     );
+  }
+
+  Future<void> _exportToPdf() async {
+    if (_reportData == null) return;
+
+    try {
+      final pdf = pw.Document();
+      final dateFormat = DateFormat('dd/MM/yyyy');
+      final period = '${dateFormat.format(_reportData!.startDate!)} - ${dateFormat.format(_reportData!.endDate!)}';
+      final reportTitle = _reportTypeLabels[_selectedReportType] ?? 'Report';
+
+      final totalCustomers = _reportData!.totalCustomers ?? 0;
+      final newCustomers = _reportData!.newCustomers ?? 0;
+      final totalAppointments = _reportData!.totalAppointments ?? 0;
+      final estimatedReturningCustomers = totalCustomers > 0 && totalAppointments > totalCustomers
+          ? (totalAppointments - totalCustomers).clamp(0, totalCustomers)
+          : 0;
+
+      pdf.addPage(
+        pw.MultiPage(
+          header: (context) => pw.Padding(
+            padding: const pw.EdgeInsets.only(bottom: 8.0),
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Text(reportTitle, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                pw.Text('Period: $period', style: const pw.TextStyle(fontSize: 10)),
+              ],
+            ),
+          ),
+          build: (context) => [
+            pw.SizedBox(height: 16),
+            pw.Text('Summary', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+            pw.SizedBox(height: 8),
+            if (_selectedReportType == 'operations' || _selectedReportType == 'customer') ...[
+              pw.Padding(padding: const pw.EdgeInsets.only(bottom: 4.0), child: pw.Text('Total Customers: $totalCustomers')),
+              pw.Padding(padding: const pw.EdgeInsets.only(bottom: 4.0), child: pw.Text('New Customers: $newCustomers')),
+            ],
+            if (_selectedReportType == 'operations' || _selectedReportType == 'appointments')
+              pw.Padding(padding: const pw.EdgeInsets.only(bottom: 4.0), child: pw.Text('Total Appointments: $totalAppointments')),
+            pw.SizedBox(height: 16),
+            if (_selectedReportType == 'operations' && (totalCustomers > 0 || totalAppointments > 0)) ...[
+              pw.Text('Detailed Breakdown', style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 8),
+              if (totalCustomers > 0)
+                pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 4.0),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text('Customer Retention Rate'),
+                      pw.Text('${((estimatedReturningCustomers / totalCustomers) * 100).toStringAsFixed(1)}%'),
+                    ],
+                  ),
+                ),
+              if (totalCustomers > 0)
+                pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 4.0),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [pw.Text('Revenue per Customer'), pw.Text('N/A')],
+                  ),
+                ),
+              if (totalAppointments > 0 && totalCustomers > 0)
+                pw.Padding(
+                  padding: const pw.EdgeInsets.only(bottom: 4.0),
+                  child: pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Text('Average Appointments per Customer'),
+                      pw.Text((totalAppointments / totalCustomers).toStringAsFixed(1)),
+                    ],
+                  ),
+                ),
+            ],
+          ],
+        ),
+      );
+
+      final bytes = await pdf.save();
+      final directory = await getApplicationDocumentsDirectory();
+      final fileName = 'Salon_Operations_Report_${DateFormat('yyyyMMdd_HHmm').format(DateTime.now())}.pdf';
+      final file = File('${directory.path}/$fileName');
+      await file.writeAsBytes(bytes);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Report saved to: ${file.path}'),
+            backgroundColor: Colors.green,
+            action: SnackBarAction(
+              label: 'Share',
+              onPressed: () => Printing.sharePdf(bytes: bytes, filename: fileName),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error exporting PDF: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override

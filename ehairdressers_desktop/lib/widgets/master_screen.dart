@@ -3,6 +3,7 @@ import '../screens/reservation_list.dart';
 import '../screens/product_insert_screen.dart';
 import '../screens/products_list_screen.dart';
 import '../screens/employee_add_screen.dart';
+import '../screens/employee_list_screen.dart';
 import '../screens/product_sales_report_screen.dart';
 import '../screens/salon_operations_report_screen.dart';
 import '../models/user.dart';
@@ -53,14 +54,21 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
               },
             ),
             ListTile(
-              title: Text("Upload product"),
+              title: Text("Add product"),
               onTap: () {
                 Navigator.of(context).push(
                     MaterialPageRoute(builder: (context) => ProductInsert()));
               },
             ),
             ListTile(
-              title: Text("Upload employee"),
+              title: Text("Employees List"),
+              onTap: () {
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) => EmployeeListScreen()));
+              },
+            ),
+            ListTile(
+              title: Text("Add employee"),
               onTap: () {
                 Navigator.of(context).push(
                     MaterialPageRoute(builder: (context) => EmployeeAdd()));
