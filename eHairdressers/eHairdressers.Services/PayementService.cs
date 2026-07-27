@@ -3,10 +3,14 @@ using eHairdressers.Model;
 using eHairdressers.Model.Requests;
 using eHairdressers.Model.SearchObjects;
 using eHairdressers.Services.Database;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Stripe;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -14,8 +18,84 @@ namespace eHairdressers.Services
 {
     public class PaymentService : BaseCRUDService<Model.Payment, Database.Payment, PaymentSearchObject, PaymentInsertRequest, PaymentUpdateRequest>, IPaymentService
     {
-        public PaymentService(eHairdressersContext context, IMapper mapper) : base(context, mapper)
+        private readonly IConfiguration _configuration;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+
+        public PaymentService(eHairdressersContext context, IMapper mapper, IConfiguration configuration, IHttpContextAccessor httpContextAccessor) : base(context, mapper)
         {
+            _configuration = configuration;
+            _httpContextAccessor = httpContextAccessor;
+
+            var secretKey = _configuration["Stripe:SecretKey"];
+            if (!string.IsNullOrEmpty(secretKey))
+            {
+                StripeConfiguration.ApiKey = secretKey;
+            }
+        }
+        private async Task<Database.User?> GetCurrentUserAsync()
+        {
+            var username = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(username))
+            {
+                return null;
+            }
+
+            return await _context.User.FirstOrDefaultAsync(u => u.Username == username);
+        }
+
+        private bool IsPrivilegedCaller()
+        {
+            var user = _httpContextAccessor.HttpContext?.User;
+            return user != null && (user.IsInRole("Employee") || user.IsInRole("Admin"));
+        }
+        private async Task EnsureCallerOwnsOrderAsync(Database.Orders order)
+        {
+            if (IsPrivilegedCaller())
+            {
+                return;
+            }
+
+            var currentUser = await GetCurrentUserAsync();
+            if (currentUser == null || currentUser.UserId != order.UserId)
+            {
+                throw new UnauthorizedAccessException("You are not authorized to perform this action on this order.");
+            }
+        }
+
+              private async Task<Database.Payment> UpsertPaymentFromIntentAsync(PaymentIntent paymentIntent, int orderId)
+        {
+            string paymentStatus = paymentIntent.Status switch
+            {
+                "succeeded" => "Completed",
+                "canceled" => "Failed",
+                "requires_payment_method" => "Failed",
+                _ => "Pending"
+            };
+
+            var existing = await _context.Payments
+                .FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntent.Id);
+
+            if (existing != null)
+            {
+                existing.PaymentStatus = paymentStatus;
+                await _context.SaveChangesAsync();
+                return existing;
+            }
+
+            var paymentEntity = new Database.Payment
+            {
+                OrderId = orderId,
+                PaymentDate = DateTime.Now,
+                Amount = paymentIntent.Amount / 100m,
+                PaymentMethod = "Stripe",
+                PaymentStatus = paymentStatus,
+                StripePaymentIntentId = paymentIntent.Id
+            };
+
+            _context.Payments.Add(paymentEntity);
+            await _context.SaveChangesAsync();
+
+            return paymentEntity;
         }
 
         public override async Task BeforeInsert(Database.Payment entity, PaymentInsertRequest insert)
@@ -38,26 +118,6 @@ namespace eHairdressers.Services
             
            
             entity.PaymentStatus = "Pending";
-        }
-
-        public async Task<Model.Payment> ProcessPaymentAsync(PaymentInsertRequest request)
-        {
-           
-            if (request.Amount <= 0)
-            {
-                throw new InvalidOperationException("Payment amount must be greater than zero.");
-            }
-
-           
-            var paymentResult = await SimulateSimplePaymentAsync(request);
-            
-            if (paymentResult)
-            {
-                request.PaymentMethod = "Credit Card";
-            }
-
-           
-            return await Insert(request);
         }
 
         public async Task<Model.Payment> UpdatePaymentStatusAsync(int paymentId, string status)
@@ -128,32 +188,6 @@ namespace eHairdressers.Services
             return true;
         }
 
-        private async Task<bool> SimulateSimplePaymentAsync(PaymentInsertRequest request)
-        {
-           
-            await Task.Delay(500);
-
-           
-            var cardNumber = request.CardNumber?.Replace(" ", "").Replace("-", "") ?? "";
-            
-           
-            if (cardNumber.EndsWith("0000"))
-            {
-               
-                return false;
-            }
-            else if (cardNumber.EndsWith("1111"))
-            {
-               
-                return true;
-            }
-            else
-            {
-                        
-                return true;
-            }
-        }
-
         public override IQueryable<Database.Payment> AddInclude(IQueryable<Database.Payment> query, PaymentSearchObject? search = null)
         {
             query = query.Include(p => p.Order);
@@ -200,6 +234,131 @@ namespace eHairdressers.Services
             }
 
             return filteredQuery;
+        }
+
+        public async Task<object> CreateStripePaymentIntentAsync(CreateStripeIntentRequest request)
+        {
+
+            var order = await _context.Orders.FindAsync(request.OrderId);
+            if (order == null)
+            {
+                throw new InvalidOperationException($"Order with ID {request.OrderId} does not exist.");
+            }
+
+            await EnsureCallerOwnsOrderAsync(order);
+
+            if (order.TotalPrice <= 0)
+            {
+                throw new InvalidOperationException("Order total must be greater than zero.");
+            }
+
+            var secretKey = _configuration["Stripe:SecretKey"];
+            if (string.IsNullOrEmpty(secretKey))
+            {
+                throw new InvalidOperationException("Stripe Secret Key is not configured. Please set Stripe:SecretKey in appsettings.json");
+            }
+
+            var currency = string.IsNullOrWhiteSpace(request.Currency) ? "usd" : request.Currency.ToLower();
+            long amountInCents = (long)Math.Round(order.TotalPrice * 100, MidpointRounding.AwayFromZero);
+
+            var options = new PaymentIntentCreateOptions
+            {
+                Amount = amountInCents,
+                Currency = currency,
+                Metadata = new Dictionary<string, string>
+                {
+                    { "orderId", request.OrderId.ToString() }
+                },
+                AutomaticPaymentMethods = new PaymentIntentAutomaticPaymentMethodsOptions
+                {
+                    Enabled = true,
+                },
+            };
+
+            var requestOptions = new RequestOptions
+            {
+                IdempotencyKey = $"create-intent-order-{request.OrderId}-{DateTime.UtcNow:yyyyMMddHHmm}"
+            };
+
+            var service = new PaymentIntentService();
+            var paymentIntent = await service.CreateAsync(options, requestOptions);
+
+            return new
+            {
+                clientSecret = paymentIntent.ClientSecret
+            };
+        }
+
+        public async Task<Model.Payment> ConfirmStripePaymentAsync(ConfirmStripePaymentRequest request)
+        {
+            var order = await _context.Orders.FindAsync(request.OrderId);
+            if (order == null)
+            {
+                throw new InvalidOperationException($"Order with ID {request.OrderId} does not exist.");
+            }
+
+            await EnsureCallerOwnsOrderAsync(order);
+
+            var secretKey = _configuration["Stripe:SecretKey"];
+            if (string.IsNullOrEmpty(secretKey))
+            {
+                throw new InvalidOperationException("Stripe Secret Key is not configured. Please set Stripe:SecretKey in appsettings.json");
+            }
+
+            var service = new PaymentIntentService();
+            var paymentIntent = await service.GetAsync(request.PaymentIntentId);
+
+            if (paymentIntent == null)
+            {
+                throw new InvalidOperationException($"Payment Intent with ID {request.PaymentIntentId} not found.");
+            }
+
+            if (paymentIntent.Metadata == null ||
+                !paymentIntent.Metadata.TryGetValue("orderId", out var metadataOrderId) ||
+                metadataOrderId != request.OrderId.ToString())
+            {
+                throw new InvalidOperationException("Payment Intent does not match the specified order.");
+            }
+
+            var paymentEntity = await UpsertPaymentFromIntentAsync(paymentIntent, request.OrderId);
+
+            return _mapper.Map<Model.Payment>(paymentEntity);
+        }
+
+        public async Task HandleStripeWebhookAsync(string json, string stripeSignatureHeader)
+        {
+            var webhookSecret = _configuration["Stripe:WebhookSecret"];
+            if (string.IsNullOrEmpty(webhookSecret))
+            {
+                throw new InvalidOperationException("Stripe Webhook Secret is not configured. Please set Stripe:WebhookSecret in appsettings.json");
+            }
+
+            var stripeEvent = EventUtility.ConstructEvent(json, stripeSignatureHeader, webhookSecret);
+
+            if (stripeEvent.Type != "payment_intent.succeeded" && stripeEvent.Type != "payment_intent.payment_failed")
+            {
+                return;
+            }
+
+            var paymentIntent = stripeEvent.Data.Object as PaymentIntent;
+            if (paymentIntent == null)
+            {
+                return;
+            }
+
+            if (paymentIntent.Metadata == null || !paymentIntent.Metadata.TryGetValue("orderId", out var orderIdString) ||
+                !int.TryParse(orderIdString, out var orderId))
+            {
+                return;
+            }
+
+            var orderExists = await _context.Orders.AnyAsync(o => o.OrderId == orderId);
+            if (!orderExists)
+            {
+                return;
+            }
+
+            await UpsertPaymentFromIntentAsync(paymentIntent, orderId);
         }
     }
 }

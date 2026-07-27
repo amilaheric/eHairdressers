@@ -6,9 +6,17 @@ import 'package:intl/intl.dart';
 class Authorization {
   static String? username;
   static String? password;
-  static int currentUserId = 1; 
-  static String? userRole; 
-  static String? userEmail; 
+  static int currentUserId = 1;
+  static String? userRole;
+  static String? userEmail;
+}
+
+class StripeConfig {
+  static const String publishableKey = String.fromEnvironment(
+    'stripePublishableKey',
+    defaultValue:
+        'pk_test_51Sr3Jf0k64PF14h3oacyXOmu3I1DKD55HReDZqNRiKaCzUaS20NdVOHNPDnOo9bTYIKDBtjxKce8xeIU2b2B6LYo007KlJJ2UP',
+  );
 }
 
 Image imageFromBase64String(String base64String) {

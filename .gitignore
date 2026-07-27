@@ -351,3 +351,9 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+# Local secrets - real Stripe keys live here, never commit (see .env.example for the template)
+.env
+
+# Docker Compose file-based secrets (see eHairdressers/secrets/README.md for the template)
+eHairdressers/secrets/*.txt

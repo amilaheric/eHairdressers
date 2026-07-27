@@ -2,6 +2,7 @@
 using eHairdressers.Model.Requests;
 using eHairdressers.Model.SearchObjects;
 using eHairdressers.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace eHairdressers.Controllers
@@ -15,48 +16,59 @@ namespace eHairdressers.Controllers
             _paymentService = service;
         }
 
-        [HttpPost("process")]
-        public async Task<Model.Payment> ProcessPayment([FromBody] PaymentInsertRequest request)
-        {
-            return await _paymentService.ProcessPaymentAsync(request);
-        }
-
         [HttpGet("order/{orderId}")]
         public async Task<List<Model.Payment>> GetPaymentsByOrderId(int orderId)
         {
             return await _paymentService.GetPaymentsByOrderIdAsync(orderId);
         }
 
-        [HttpGet("sample-cards")]
-        public object GetSampleCards()
+        [HttpPost("create-stripe-intent")]
+        public async Task<IActionResult> CreateStripeIntent([FromBody] CreateStripeIntentRequest request)
         {
-            return new
+            try
             {
-                successCards = new[]
-                {
-                    new { cardNumber = "1234567890121111", description = "Always succeeds" },
-                    new { cardNumber = "1234567890123456", description = "Default test card" }
-                },
-                failureCards = new[]
-                {
-                    new { cardNumber = "1234567890120000", description = "Always fails" }
-                }
-            };
+                var result = await _paymentService.CreateStripePaymentIntentAsync(request);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
         }
 
-        [HttpGet("test-payment")]
-        public async Task<Model.Payment> TestPayment()
+        [HttpPost("confirm-stripe-payment")]
+        public async Task<IActionResult> ConfirmStripePayment([FromBody] ConfirmStripePaymentRequest request)
         {
-
-            var testRequest = new PaymentInsertRequest
+            try
             {
-                OrderId = 1, 
-                Amount = 99.99m,
-                PaymentMethod = "Credit Card",
-                CardNumber = "1234567890121111"
-            };
+                var payment = await _paymentService.ConfirmStripePaymentAsync(request);
+                return Ok(payment);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
+    [HttpPost("stripe-webhook")]
+        [AllowAnonymous]
+        public async Task<IActionResult> StripeWebhook()
+        {
+            using var reader = new StreamReader(Request.Body);
+            var json = await reader.ReadToEndAsync();
 
-            return await _paymentService.ProcessPaymentAsync(testRequest);
+            try
+            {
+                await _paymentService.HandleStripeWebhookAsync(json, Request.Headers["Stripe-Signature"]);
+                return Ok();
+            }
+            catch (Stripe.StripeException ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
         }
     }
 }

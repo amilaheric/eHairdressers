@@ -15,7 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.PropertyNamingPolicy = null; // Use PascalCase (default)
+        options.JsonSerializerOptions.PropertyNamingPolicy = null; 
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         options.JsonSerializerOptions.MaxDepth = 32;
     });
@@ -44,7 +44,6 @@ builder.Services.AddSwaggerGen(c =>
         Description = "Basic Authentication header"
     });
 
-    // Apply security requirement to all operations
     c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement()
     {
         {
@@ -56,7 +55,6 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
     
-    // Ensure all operations are documented
     c.DocInclusionPredicate((name, api) => true);
     });
 builder.Services.AddTransient<IProductsService, ProductsService>();
@@ -69,6 +67,7 @@ builder.Services.AddTransient<IAppointmentService, AppointmentService>();
 builder.Services.AddTransient<IOrdersService, OrdersService>();
 builder.Services.AddTransient<IOrderItemsService, OrderItemsService>();
 builder.Services.AddTransient<IPaymentService, PaymentService>();
+builder.Services.AddHttpContextAccessor();
 
 
 builder.Services.AddTransient<IReviewService, ReviewService>();
@@ -82,13 +81,11 @@ builder.Services.AddTransient<IUserRoleService, UserRoleService>();
 builder.Services.AddTransient<IRecommendationService, RecommendationService>();
 
 
-// Configure EasyNetQ for RabbitMQ messaging
 builder.Services.AddSingleton<IBus>(provider =>
 {
     var connectionString = "host=rabbitmq;port=5672;virtualHost=/;username=admin;password=admin123";
     var bus = RabbitHutch.CreateBus(connectionString);
     
-    // Ensure the bus is properly disposed when the application shuts down
     var lifetime = provider.GetService<IHostApplicationLifetime>();
     if (lifetime != null)
     {
@@ -114,6 +111,21 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<eHairdressersContext>(options =>
     options.UseSqlServer(connectionString));
 
+void LoadDockerSecretIntoConfig(string secretFilePath, string configKey)
+{
+    if (File.Exists(secretFilePath))
+    {
+        var value = File.ReadAllText(secretFilePath).Trim();
+        if (!string.IsNullOrEmpty(value))
+        {
+            builder.Configuration[configKey] = value;
+        }
+    }
+}
+
+LoadDockerSecretIntoConfig("/run/secrets/stripe_secret_key", "Stripe:SecretKey");
+LoadDockerSecretIntoConfig("/run/secrets/stripe_webhook_secret", "Stripe:WebhookSecret");
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -122,23 +134,20 @@ using (var scope = app.Services.CreateScope())
     try
     {
         dataContext.Database.Migrate();
-        
-        // Seed comprehensive data for development
+
         await eHairdressers.Services.Database.SeedData.SeedAllData(dataContext);
     }
     catch (Exception ex)
     {
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
         logger.LogError(ex, "An error occurred while seeding the database. Application will continue without seed data.");
-        // Don't rethrow - let the application continue
+
     }
 }
-// Configure the HTTP request pipeline.
-// Enable Swagger in all environments for API documentation
+
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// Only use HTTPS redirection in Production to avoid SSL issues in Development
 if (app.Environment.IsProduction())
 {
     app.UseHttpsRedirection();
@@ -146,7 +155,6 @@ if (app.Environment.IsProduction())
 
 app.UseStaticFiles();
 
-// Use CORS
 app.UseCors("AllowAll");
 
 app.UseAuthentication();
@@ -154,7 +162,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Map SignalR Hub
 app.MapHub<eHairdressers.Hubs.ChatHub>("/chatHub");
 
 app.Run();

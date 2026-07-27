@@ -13,11 +13,19 @@ import 'package:ehairdressers_mobile/providers/user_provider.dart';
 
 import 'package:ehairdressers_mobile/screens/product_list_screen.dart';
 import 'package:ehairdressers_mobile/utils/util.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Card;
+import 'package:flutter/material.dart' as material show Card;
 import 'package:provider/provider.dart';
+import 'package:flutter_stripe/flutter_stripe.dart' hide Card;
 import 'dart:io';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  Stripe.publishableKey = StripeConfig.publishableKey;
+
+  await Stripe.instance.applySettings();
+
   HttpOverrides.global = _DevHttpOverrides();
   runApp(MultiProvider(
     providers: [
@@ -30,9 +38,9 @@ void main() {
       ChangeNotifierProvider(create: (_) => PaymentProvider()),
       ChangeNotifierProvider(create: (_) => ReviewProvider()),
       ChangeNotifierProvider(create: (_) => OrderItemProvider()),
-              ChangeNotifierProvider(create: (_) => ChatProvider()),
-        ChangeNotifierProvider(create: (_) => UserAccountProvider()),
-        ChangeNotifierProvider(create: (_) => RecommendationProvider()),
+      ChangeNotifierProvider(create: (_) => ChatProvider()),
+      ChangeNotifierProvider(create: (_) => UserAccountProvider()),
+      ChangeNotifierProvider(create: (_) => RecommendationProvider()),
     ],
     child: const MyApp(),
   ));
@@ -94,7 +102,7 @@ class MyHomePage extends StatelessWidget {
             child: SingleChildScrollView(
       child: Container(
         constraints: BoxConstraints(maxHeight: 600, maxWidth: 600),
-        child: Card(
+        child: material.Card(
           child: Padding(
               padding: const EdgeInsets.all(20.0),
               child: Column(
@@ -126,18 +134,13 @@ class MyHomePage extends StatelessWidget {
                       var username = _usernameController.text;
                       var password = _passwordController.text;
 
-
                       Authorization.username = username;
                       Authorization.password = password;
 
                       try {
                         await _productProvider.get();
 
-
-
                         var users = await _userProvider.get();
-
-
 
                         var authenticatedUser = users.firstWhere(
                             (user) =>
@@ -146,15 +149,12 @@ class MyHomePage extends StatelessWidget {
                             orElse: () =>
                                 throw Exception('User not found in database'));
 
-
                         Authorization.currentUserId =
                             authenticatedUser.userId ?? 1;
 
-
-                        String userRole = 'User'; 
+                        String userRole = 'User';
                         if (authenticatedUser.userRoles != null &&
                             authenticatedUser.userRoles!.isNotEmpty) {
-
                           for (var userRoleData
                               in authenticatedUser.userRoles!) {
                             if (userRoleData is Map<String, dynamic>) {
@@ -171,8 +171,6 @@ class MyHomePage extends StatelessWidget {
                         Navigator.of(context).push(MaterialPageRoute(
                             builder: (context) => ProductListScreen()));
                       } catch (e) {
-                              
-
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text('Login failed: $e'),

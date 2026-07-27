@@ -41,6 +41,11 @@ services:
       - ASPNETCORE_URLS=http://+:7051
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Data Source=sqlserver;Initial Catalog=IB160064;User ID=sa;Password=Password123!;TrustServerCertificate=True
+      - Stripe__PublishableKey=${STRIPE_PUBLISHABLE_KEY}
+
+    secrets:
+      - stripe_secret_key
+      - stripe_webhook_secret
     depends_on:
       - sqlserver
       - rabbitmq
@@ -57,4 +62,10 @@ volumes:
 networks:
   ehairdressers_network:
     driver: bridge
+
+secrets:
+  stripe_secret_key:
+    file: ./secrets/stripe_secret_key.txt
+  stripe_webhook_secret:
+    file: ./secrets/stripe_webhook_secret.txt
 

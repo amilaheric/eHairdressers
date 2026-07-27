@@ -1,13 +1,16 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Card;
+import 'package:flutter/material.dart' as material;
 import 'package:flutter/services.dart';
-import 'package:ehairdressers_mobile/models/payment.dart';
+import 'package:ehairdressers_mobile/models/payment.dart' as models;
 import 'package:ehairdressers_mobile/models/order_item.dart';
 import 'package:ehairdressers_mobile/models/cart.dart';
 import 'package:ehairdressers_mobile/providers/payment_provider.dart';
 import 'package:ehairdressers_mobile/providers/order_item_provider.dart';
 import 'package:ehairdressers_mobile/providers/cart_provider.dart';
 import 'package:ehairdressers_mobile/widgets/master_screen.dart';
+import 'package:ehairdressers_mobile/utils/util.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_stripe/flutter_stripe.dart' hide Card;
 
 class PaymentScreen extends StatefulWidget {
   final int orderId;
@@ -28,64 +31,43 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  final _formKey = GlobalKey<FormState>();
   late PaymentProvider _paymentProvider;
-  
-  
-  final TextEditingController _cardNumberController = TextEditingController();
-  final TextEditingController _cardHolderController = TextEditingController();
-  final TextEditingController _expiryMonthController = TextEditingController();
-  final TextEditingController _expiryYearController = TextEditingController();
-  final TextEditingController _cvvController = TextEditingController();
-  
 
-  int _selectedPaymentMethod = 1; 
+  bool _isCardComplete = false;
   bool _isProcessing = false;
-  bool _isTestMode = true;
   bool _isInitialized = false;
-  
-  
-  List<PaymentMethod> _paymentMethods = [];
-  
-  @override
-  void initState() {
-    super.initState();
-    _loadTestData(); 
-  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _paymentProvider = context.read<PaymentProvider>();
-    _loadPaymentMethods(); 
+    _ensureStripeInitialized();
   }
 
-  Future<void> _loadPaymentMethods() async {
+  Future<void> _ensureStripeInitialized() async {
     try {
-      var methods = await _paymentProvider.getPaymentMethods();
+      if (Stripe.publishableKey.isEmpty) {
+        Stripe.publishableKey = StripeConfig.publishableKey;
+      }
+
+      await Stripe.instance.applySettings();
+
+      print('Stripe initialization check complete');
       setState(() {
-        _paymentMethods = methods;
         _isInitialized = true;
       });
     } catch (e) {
-      print('Error loading payment methods: $e');
+      print('Error ensuring Stripe initialization: $e');
+      await Future.delayed(Duration(milliseconds: 2000));
       setState(() {
         _isInitialized = true;
       });
     }
   }
 
-  void _loadTestData() {
-
-    _cardNumberController.text = '4111111111111111';
-    _cardHolderController.text = 'Test User';
-    _expiryMonthController.text = '12';
-    _expiryYearController.text = '2025';
-    _cvvController.text = '123';
-  }
-
   Future<void> _processPayment() async {
-    if (!_formKey.currentState!.validate()) {
+    if (!_isCardComplete) {
+      _showErrorDialog('Please enter valid card details');
       return;
     }
 
@@ -94,32 +76,56 @@ class _PaymentScreenState extends State<PaymentScreen> {
     });
 
     try {
-
-      final paymentRequest = PaymentRequest(
+      String? clientSecret = await _paymentProvider.createStripePaymentIntent(
         orderId: widget.orderId,
         amount: widget.amount,
-        paymentMethodId: _selectedPaymentMethod,
-        cardNumber: _cardNumberController.text.isNotEmpty ? _cardNumberController.text : null,
-        cardHolderName: _cardHolderController.text.isNotEmpty ? _cardHolderController.text : null,
-        expiryMonth: _expiryMonthController.text.isNotEmpty ? int.tryParse(_expiryMonthController.text) : null,
-        expiryYear: _expiryYearController.text.isNotEmpty ? int.tryParse(_expiryYearController.text) : null,
-        cvv: _cvvController.text.isNotEmpty ? _cvvController.text : null,
-        isTestPayment: _isTestMode,
+        currency: 'usd',
       );
 
-      PaymentResponse? response;
-      
+      if (clientSecret == null) {
+        setState(() {
+          _isProcessing = false;
+        });
+        _showErrorDialog('Failed to create payment intent. Please try again.');
+        return;
+      }
 
-      response = await _paymentProvider.processTestPayment(paymentRequest);
+      String paymentIntentId = clientSecret.split('_secret_')[0];
 
-      setState(() {
-        _isProcessing = false;
-      });
+      try {
+        await Stripe.instance.confirmPayment(
+          paymentIntentClientSecret: clientSecret,
+          data: PaymentMethodParams.card(
+            paymentMethodData: PaymentMethodData(
+              billingDetails: BillingDetails(),
+            ),
+          ),
+        );
 
-      if (response != null && (response.status == 'SUCCESS' || response.status == 'Pending')) {
-        _showSuccessDialog(response);
-      } else {
-        _showErrorDialog('Payment failed. Please try again. Status: ${response?.status}');
+        models.PaymentResponse? response =
+            await _paymentProvider.confirmStripePayment(
+          orderId: widget.orderId,
+          paymentIntentId: paymentIntentId,
+        );
+
+        setState(() {
+          _isProcessing = false;
+        });
+
+        final status = response?.status.toLowerCase();
+        if (response != null &&
+            (status == 'completed' || status == 'pending')) {
+          _showSuccessDialog(response);
+        } else {
+          _showErrorDialog(
+              'Payment failed. Please try again. Status: ${response?.status}');
+        }
+      } on StripeException catch (e) {
+        setState(() {
+          _isProcessing = false;
+        });
+        _showErrorDialog(
+            'Stripe error: ${e.error.message ?? 'Payment failed'}');
       }
     } catch (e) {
       setState(() {
@@ -129,10 +135,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
     }
   }
 
-  void _showSuccessDialog(PaymentResponse response) async {
-
+  void _showSuccessDialog(models.PaymentResponse response) async {
     await _createOrderItems();
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -155,14 +160,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
               Text('Status: ${response.status}'),
               Text('Payment Date: ${response.timestamp}'),
               SizedBox(height: 10),
-              Text('Thank you for your purchase!', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text('Thank you for your purchase!',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); 
-                Navigator.of(context).pop(); 
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
               },
               child: Text('OK'),
             ),
@@ -174,12 +180,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   Future<void> _createOrderItems() async {
     try {
-   
-      
       final orderItemProvider = OrderItemProvider();
-      
+
       for (var item in widget.cartItems) {
-       
         final orderItem = OrderItem()
           ..orderId = widget.orderId
           ..productId = item.product.id
@@ -187,17 +190,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
           ..price = item.product.price
           ..amount = item.count
           ..total = (item.product.price ?? 0) * item.count;
-        
-        await orderItemProvider.insert(orderItem);
-        
-      }
-      
 
-      
+        await orderItemProvider.insert(orderItem);
+      }
 
       final cartProvider = context.read<CartProvider>();
       cartProvider.clearCart();
-      
     } catch (e) {
       print('Error creating order items: $e');
       print('This is likely due to missing backend endpoint for OrderItems');
@@ -239,7 +237,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             children: [
               CircularProgressIndicator(),
               SizedBox(height: 16),
-              Text('Loading payment methods...'),
+              Text('Initializing payment...'),
             ],
           ),
         ),
@@ -250,37 +248,22 @@ class _PaymentScreenState extends State<PaymentScreen> {
       title: "Payment",
       child: SingleChildScrollView(
         padding: EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-
-              _buildOrderSummary(),
-              SizedBox(height: 24),
-              
-
-              _buildPaymentMethodSelection(),
-              SizedBox(height: 24),
-              
-
-              if (_selectedPaymentMethod == 1) _buildCreditCardForm(),
-              
-              SizedBox(height: 24),
-              
-              SizedBox(height: 32),
-              
-
-              _buildProcessButton(),
-            ],
-          ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildOrderSummary(),
+            SizedBox(height: 24),
+            _buildStripeCardForm(),
+            SizedBox(height: 32),
+            _buildProcessButton(),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildOrderSummary() {
-    return Card(
+    return material.Card(
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
@@ -295,7 +278,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Order Number:'),
-                Text(widget.orderNumber, style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(widget.orderNumber,
+                    style: TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
             SizedBox(height: 8),
@@ -305,7 +289,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 Text('Total Amount:'),
                 Text(
                   '\$${widget.amount.toStringAsFixed(2)}',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green),
                 ),
               ],
             ),
@@ -315,185 +302,42 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  Widget _buildPaymentMethodSelection() {
-    if (_paymentMethods.isEmpty) {
-      return Card(
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Text('No payment methods available'),
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Payment Method',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        SizedBox(height: 12),
-        ...(_paymentMethods.map((method) => RadioListTile<int>(
-          title: Text(method.name ?? 'Unknown'),
-          subtitle: Text(method.description ?? ''),
-          value: method.id ?? 0,
-          groupValue: _selectedPaymentMethod,
-          onChanged: (value) {
-            if (value != null) {
-              setState(() {
-                _selectedPaymentMethod = value;
-              });
-            }
-          },
-        )).toList()),
-      ],
-    );
-  }
-
-  Widget _buildCreditCardForm() {
-    return Card(
+  Widget _buildStripeCardForm() {
+    return material.Card(
       child: Padding(
         padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Credit Card Details',
+              'Stripe Credit Card Details',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 16),
-            
-
-            TextFormField(
-              controller: _cardNumberController,
-              decoration: InputDecoration(
-                labelText: 'Card Number',
-                hintText: '1234 5678 9012 3456',
-                border: OutlineInputBorder(),
+            Container(
+              constraints: BoxConstraints(
+                minHeight: 50,
+                maxHeight: 200,
               ),
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(16),
-              ],
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter card number';
-                }
-                if (value.length < 13) {
-                  return 'Card number must be at least 13 digits';
-                }
-                return null;
-              },
-            ),
-            SizedBox(height: 16),
-            
-
-            TextFormField(
-              controller: _cardHolderController,
-              decoration: InputDecoration(
-                labelText: 'Card Holder Name',
-                hintText: 'John Doe',
-                border: OutlineInputBorder(),
+              child: CardField(
+                onCardChanged: (card) {
+                  setState(() {
+                    _isCardComplete = card?.complete ?? false;
+                  });
+                },
               ),
-              textCapitalization: TextCapitalization.words,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter card holder name';
-                }
-                return null;
-              },
             ),
-            SizedBox(height: 16),
-            
-
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _expiryMonthController,
-                    decoration: InputDecoration(
-                      labelText: 'Month',
-                      hintText: 'MM',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(2),
-                    ],
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Required';
-                      }
-                      int? month = int.tryParse(value);
-                      if (month == null || month < 1 || month > 12) {
-                        return 'Invalid';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: TextFormField(
-                    controller: _expiryYearController,
-                    decoration: InputDecoration(
-                      labelText: 'Year',
-                      hintText: 'YYYY',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(4),
-                    ],
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Required';
-                      }
-                      int? year = int.tryParse(value);
-                      if (year == null || year < DateTime.now().year) {
-                        return 'Invalid';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: TextFormField(
-                    controller: _cvvController,
-                    decoration: InputDecoration(
-                      labelText: 'CVV',
-                      hintText: '123',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(4),
-                    ],
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Required';
-                      }
-                      if (value.length < 3) {
-                        return 'Invalid';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-              ],
-            ),
+            SizedBox(height: 8),
+            if (!_isCardComplete)
+              Text(
+                'Please enter your card details above',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
           ],
         ),
       ),
     );
   }
-
-
 
   Widget _buildProcessButton() {
     return SizedBox(
@@ -528,11 +372,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   @override
   void dispose() {
-    _cardNumberController.dispose();
-    _cardHolderController.dispose();
-    _expiryMonthController.dispose();
-    _expiryYearController.dispose();
-    _cvvController.dispose();
     super.dispose();
   }
 }
