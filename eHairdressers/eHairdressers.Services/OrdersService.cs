@@ -144,11 +144,33 @@ namespace eHairdressers.Services
         public async Task RecalculateAllOrderTotals()
         {
             var orders = await _context.Orders.ToListAsync();
-            
+
             foreach (var order in orders)
             {
                 await UpdateOrderTotalPrice(order.OrderId);
             }
+        }
+
+        public async Task<int> SyncOrderStatusFromPayments()
+        {
+            var orderIdsWithCompletedPayment = await _context.Payments
+                .Where(p => p.PaymentStatus == "Completed")
+                .Select(p => p.OrderId)
+                .Distinct()
+                .ToListAsync();
+
+            var ordersToFix = await _context.Orders
+                .Where(o => orderIdsWithCompletedPayment.Contains(o.OrderId) && !o.Status)
+                .ToListAsync();
+
+            foreach (var order in ordersToFix)
+            {
+                order.Status = true;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return ordersToFix.Count;
         }
 
 

@@ -19,7 +19,9 @@ namespace eHairdressers.Services
         
        
         Task RecalculateAllOrderTotals();
-        
+
+        Task<int> SyncOrderStatusFromPayments();
+
 
     }
 }

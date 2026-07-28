@@ -75,24 +75,37 @@ namespace eHairdressers.Services
             var existing = await _context.Payments
                 .FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntent.Id);
 
+            Database.Payment paymentEntity;
+
             if (existing != null)
             {
                 existing.PaymentStatus = paymentStatus;
-                await _context.SaveChangesAsync();
-                return existing;
+                paymentEntity = existing;
+            }
+            else
+            {
+                paymentEntity = new Database.Payment
+                {
+                    OrderId = orderId,
+                    PaymentDate = DateTime.Now,
+                    Amount = paymentIntent.Amount / 100m,
+                    PaymentMethod = "Stripe",
+                    PaymentStatus = paymentStatus,
+                    StripePaymentIntentId = paymentIntent.Id
+                };
+
+                _context.Payments.Add(paymentEntity);
             }
 
-            var paymentEntity = new Database.Payment
+            if (paymentStatus == "Completed")
             {
-                OrderId = orderId,
-                PaymentDate = DateTime.Now,
-                Amount = paymentIntent.Amount / 100m,
-                PaymentMethod = "Stripe",
-                PaymentStatus = paymentStatus,
-                StripePaymentIntentId = paymentIntent.Id
-            };
+                var order = await _context.Orders.FindAsync(orderId);
+                if (order != null)
+                {
+                    order.Status = true;
+                }
+            }
 
-            _context.Payments.Add(paymentEntity);
             await _context.SaveChangesAsync();
 
             return paymentEntity;

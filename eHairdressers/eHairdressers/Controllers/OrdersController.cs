@@ -59,17 +59,40 @@ namespace eHairdressers.Controllers
             {
                 var ordersService = (IOrdersService)_service;
                 await ordersService.RecalculateAllOrderTotals();
-                
-                return Ok(new { 
-                    success = true, 
-                    message = "All order totals have been recalculated successfully" 
+
+                return Ok(new {
+                    success = true,
+                    message = "All order totals have been recalculated successfully"
                 });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { 
-                    success = false, 
-                    message = $"Error recalculating order totals: {ex.Message}" 
+                return BadRequest(new {
+                    success = false,
+                    message = $"Error recalculating order totals: {ex.Message}"
+                });
+            }
+        }
+
+        [HttpPost("sync-status-from-payments")]
+        [AllowAnonymous]
+        public async Task<IActionResult> SyncOrderStatusFromPayments()
+        {
+            try
+            {
+                var ordersService = (IOrdersService)_service;
+                var fixedCount = await ordersService.SyncOrderStatusFromPayments();
+
+                return Ok(new {
+                    success = true,
+                    message = $"{fixedCount} order(s) marked as Completed based on existing payments"
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new {
+                    success = false,
+                    message = $"Error syncing order status: {ex.Message}"
                 });
             }
         }
