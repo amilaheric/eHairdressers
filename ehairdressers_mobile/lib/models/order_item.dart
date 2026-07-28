@@ -15,7 +15,10 @@ class OrderItem {
   
   @JsonKey(name: 'ProductName')
   String? productName;
-  
+
+  @JsonKey(name: 'ProductImage')
+  String? productImage;
+
   @JsonKey(name: 'Quantity')
   int? quantity;
   
@@ -57,7 +60,7 @@ class OrderItem {
   double get displayPrice => price ?? unitPrice ?? 0.0;
   
   // Getter for display quantity
-  int get displayQuantity => quantity ?? 1;
+  int get displayQuantity => quantity ?? amount ?? 1;
   
   // Getter for product display name
   String get displayProductName => productName ?? 'Product #$productId';

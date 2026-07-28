@@ -5,6 +5,7 @@ import 'package:ehairdressers_mobile/providers/user_account_provider.dart';
 import 'package:ehairdressers_mobile/providers/recommendation_provider.dart';
 import 'package:ehairdressers_mobile/providers/employees_provider.dart';
 import 'package:ehairdressers_mobile/providers/order_item_provider.dart';
+import 'package:ehairdressers_mobile/providers/order_provider.dart';
 import 'package:ehairdressers_mobile/providers/payment_provider.dart';
 import 'package:ehairdressers_mobile/providers/product_provider.dart';
 import 'package:ehairdressers_mobile/providers/review_provider.dart';
@@ -38,6 +39,7 @@ void main() async {
       ChangeNotifierProvider(create: (_) => PaymentProvider()),
       ChangeNotifierProvider(create: (_) => ReviewProvider()),
       ChangeNotifierProvider(create: (_) => OrderItemProvider()),
+      ChangeNotifierProvider(create: (_) => OrderProvider()),
       ChangeNotifierProvider(create: (_) => ChatProvider()),
       ChangeNotifierProvider(create: (_) => UserAccountProvider()),
       ChangeNotifierProvider(create: (_) => RecommendationProvider()),

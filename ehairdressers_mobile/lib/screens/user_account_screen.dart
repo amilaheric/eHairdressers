@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ehairdressers_mobile/models/user_account.dart';
 import 'package:ehairdressers_mobile/providers/user_account_provider.dart';
+import 'package:ehairdressers_mobile/screens/order_history_screen.dart';
 import 'package:ehairdressers_mobile/screens/user_appointments_screen.dart';
 import 'package:ehairdressers_mobile/widgets/master_screen.dart';
 import 'package:provider/provider.dart';
@@ -287,42 +288,65 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
   Widget _buildOrdersSection() {
     return Card(
       elevation: 2,
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.shopping_bag, color: Colors.green),
-                SizedBox(width: 8),
-                Text(
-                  'My Orders',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => OrderHistoryScreen(
+                userId: widget.userId,
+              ),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.shopping_bag, color: Colors.green),
+                  SizedBox(width: 8),
+                  Text(
+                    'My Orders',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
+                  Spacer(),
+                  Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 16),
+                ],
+              ),
+              SizedBox(height: 12),
+              Text(
+                'Total Orders: ${_userAccount!.totalOrders}',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Total Spent: \$${_userAccount!.totalSpent.toStringAsFixed(2)}',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              if (_userAccount!.loyaltyDiscount > 0) ...[
+                SizedBox(height: 4),
+                Text(
+                  'Discount: ${_userAccount!.loyaltyDiscount.toStringAsFixed(1)}%',
+                  style: TextStyle(fontSize: 12, color: Colors.green),
                 ),
               ],
-            ),
-            SizedBox(height: 12),
-            Text(
-              'Total Orders: ${_userAccount!.totalOrders}',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Total Spent: \$${_userAccount!.totalSpent.toStringAsFixed(2)}',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-            if (_userAccount!.loyaltyDiscount > 0) ...[
-              SizedBox(height: 4),
+              SizedBox(height: 8),
               Text(
-                'Discount: ${_userAccount!.loyaltyDiscount.toStringAsFixed(1)}%',
-                style: TextStyle(fontSize: 12, color: Colors.green),
+                'Tap to view order history',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ],
-          ],
+          ),
         ),
       ),
     );

@@ -43,6 +43,27 @@ abstract class BaseProvider<T> with ChangeNotifier {
     }
   }
 
+  // Fetch a list of T from a custom sub-route under this endpoint,
+  // e.g. getSubRoute("order/5") -> GET {baseUrl}{endpoint}/order/5
+  // Expects the response body to be a plain JSON array (not wrapped in Result/Count).
+  Future<List<T>> getSubRoute(String subRoute) async {
+    var url = Uri.parse("$_baseUrl$_endpoint/$subRoute");
+
+    Map<String, String> headers = createHeaders();
+
+    var response = await http!.get(url, headers: headers);
+
+    if (isValidResponseCode(response)) {
+      var data = jsonDecode(response.body);
+      if (data is List) {
+        return data.map((x) => fromJson(x)).cast<T>().toList();
+      }
+      return <T>[];
+    } else {
+      throw Exception("Exception... handle this gracefully");
+    }
+  }
+
   Future<List<TimeOfDay>> getTime(String date, [dynamic additionalData]) async {
     var url = Uri.parse("$_baseUrl$_endpoint/available-times?date=${date}");
 

@@ -73,6 +73,7 @@ namespace eHairdressers.Services
         public async Task<List<Model.OrderItems>> GetOrderItemsByOrderIdAsync(int orderId)
         {
             var orderItems = await _context.OrderItems
+                .Include(oi => oi.Product)
                 .Where(oi => oi.OrderId == orderId)
                 .ToListAsync();
 

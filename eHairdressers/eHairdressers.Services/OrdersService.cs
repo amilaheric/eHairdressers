@@ -90,8 +90,29 @@ namespace eHairdressers.Services
 
         public override IQueryable<Database.Orders> AddInclude(IQueryable<Database.Orders> query, OrdersSearchObject? search = null)
         {
-            query = query.Include(o => o.User);  
+            query = query.Include(o => o.User);
             return base.AddInclude(query, search);
+        }
+
+        public override IQueryable<Database.Orders> AddFilter(IQueryable<Database.Orders> query, OrdersSearchObject? search = null)
+        {
+            if (search?.UserId != null)
+            {
+                query = query.Where(o => o.UserId == search.UserId);
+            }
+
+            return base.AddFilter(query, search);
+        }
+
+        public override IQueryable<Database.Orders> AddSorting(IQueryable<Database.Orders> query, OrdersSearchObject? search = null)
+        {
+            if (string.IsNullOrEmpty(search?.SortBy))
+            {
+                // Default: most recent orders first
+                return query.OrderByDescending(o => o.OrderDate);
+            }
+
+            return base.AddSorting(query, search);
         }
 
 

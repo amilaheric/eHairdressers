@@ -8,4 +8,8 @@ class OrderItemProvider extends BaseProvider<OrderItem> {
   OrderItem fromJson(data) {
     return OrderItem.fromJson(data);
   }
+
+  Future<List<OrderItem>> getByOrderId(int orderId) {
+    return getSubRoute("order/$orderId");
+  }
 }

@@ -8,5 +8,6 @@ namespace eHairdressers.Model.SearchObjects
 {
     public class OrdersSearchObject:BaseSearchObject
     {
+        public int? UserId { get; set; }
     }
 }

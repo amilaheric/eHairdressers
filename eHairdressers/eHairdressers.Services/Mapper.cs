@@ -53,7 +53,11 @@ namespace eHairdressers.Services
                 .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src => "Pending"));
             CreateMap<Model.Requests.PaymentUpdateRequest, Database.Payment>()
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
-            CreateMap<Database.OrderItems, Model.OrderItems>();
+            CreateMap<Database.OrderItems, Model.OrderItems>()
+                .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Quantity))
+                .ForMember(dest => dest.Total, opt => opt.MapFrom(src => src.Price * src.Quantity))
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product != null ? src.Product.Name : null))
+                .ForMember(dest => dest.ProductImage, opt => opt.MapFrom(src => src.Product != null && src.Product.Image != null ? Convert.ToBase64String(src.Product.Image) : null));
             CreateMap<Model.Requests.OrderItemsInsertRequest, Database.OrderItems>()
                 .ForMember(dest => dest.OrderItemId, opt => opt.Ignore()); 
             CreateMap<Model.Requests.OrderItemsUpdateRequest, Database.OrderItems>()

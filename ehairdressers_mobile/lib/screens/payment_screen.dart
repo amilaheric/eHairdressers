@@ -2,11 +2,13 @@ import 'package:flutter/material.dart' hide Card;
 import 'package:flutter/material.dart' as material;
 import 'package:flutter/services.dart';
 import 'package:ehairdressers_mobile/models/payment.dart' as models;
+import 'package:ehairdressers_mobile/models/order.dart';
 import 'package:ehairdressers_mobile/models/order_item.dart';
 import 'package:ehairdressers_mobile/models/cart.dart';
 import 'package:ehairdressers_mobile/providers/payment_provider.dart';
 import 'package:ehairdressers_mobile/providers/order_item_provider.dart';
 import 'package:ehairdressers_mobile/providers/cart_provider.dart';
+import 'package:ehairdressers_mobile/screens/order_detail_screen.dart';
 import 'package:ehairdressers_mobile/widgets/master_screen.dart';
 import 'package:ehairdressers_mobile/utils/util.dart';
 import 'package:provider/provider.dart';
@@ -167,10 +169,29 @@ class _PaymentScreenState extends State<PaymentScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
+                Navigator.of(context).pop(); // close dialog
+                Navigator.of(context).pop(); // leave payment screen
               },
-              child: Text('OK'),
+              child: Text('Continue Shopping'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // close dialog
+                Navigator.of(context).pop(); // leave payment screen
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => OrderDetailScreen(
+                      order: Orders()
+                        ..orderId = widget.orderId
+                        ..orderNumber = widget.orderNumber
+                        ..totalWithVAT = response.amount
+                        ..status = response.status
+                        ..orderDate = response.timestamp,
+                    ),
+                  ),
+                );
+              },
+              child: Text('View Order Details'),
             ),
           ],
         );
