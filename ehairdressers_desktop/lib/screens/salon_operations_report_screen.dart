@@ -9,6 +9,7 @@ import 'package:printing/printing.dart';
 import '../models/salon_operations_report.dart';
 import '../providers/SalonOperationsReportProvider.dart';
 import '../widgets/master_screen.dart';
+import '../utils/error_messages.dart';
 
 class SalonOperationsReportScreen extends StatefulWidget {
   @override
@@ -17,7 +18,11 @@ class SalonOperationsReportScreen extends StatefulWidget {
 
 class _SalonOperationsReportScreenState extends State<SalonOperationsReportScreen> {
   late SalonOperationsReportProvider _reportProvider;
-  DateTime _startDate = DateTime.now().subtract(Duration(days: 30));
+  // Default to a wide window (~13 months) rather than the last 30 days.
+  // Appointment history (including seeded demo data) can be many months
+  // old, and a 30-day default made it look like report generation was
+  // broken when it was really just an empty result for that narrow window.
+  DateTime _startDate = DateTime.now().subtract(Duration(days: 400));
   DateTime _endDate = DateTime.now();
   String _selectedReportType = 'operations';
   SalonOperationsReport? _reportData;
@@ -73,7 +78,11 @@ class _SalonOperationsReportScreenState extends State<SalonOperationsReportScree
         _isLoading = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error generating report: $e')),
+        SnackBar(
+          content: Text(
+              'Error generating report: ${ErrorMessages.extractMessage(e)}'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }

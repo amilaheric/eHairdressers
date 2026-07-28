@@ -14,7 +14,7 @@ class EmployeeProvider extends BaseProvider<Employee> {
 
   Future<Employee> createEmployeeWithRole(Map<String, dynamic> request) async {
     try {
-      var result = await DatabaseService.createCompleteEmployee(request, "api/Employee/CreateEmployee");
+      var result = await DatabaseService.createCompleteEmployee(request, "Employee/CreateEmployee");
       return fromJson(result);
     } catch (e) {
       throw Exception('Failed to create employee with role: $e');

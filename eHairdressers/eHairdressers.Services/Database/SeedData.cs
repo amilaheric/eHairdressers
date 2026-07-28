@@ -358,15 +358,20 @@ namespace eHairdressers.Services.Database
             var employees = await context.Employees.Take(5).ToListAsync();
             var service = await context.Services.FirstAsync();
 
-        
+
+            // Appointment dates are anchored to "today" (rather than a fixed
+            // calendar date) so that reports which default to a recent
+            // window (e.g. "last 30 days") always have seeded data to show,
+            // no matter when the database is first created.
+            var today = DateTime.Today;
             var appointments = new List<Appointment>
             {
-                new Appointment { UserId = users[0].UserId, EmployeeId = employees[0].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 7, 22), AppointmentTime = new TimeSpan(9, 0, 0), Status = "Scheduled", Comment = "First time visit" },
-                new Appointment { UserId = users[0].UserId, EmployeeId = employees[0].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 8, 8), AppointmentTime = new TimeSpan(9, 0, 0), Status = "Scheduled", Comment = "Regular customer" },
-                new Appointment { UserId = users[0].UserId, EmployeeId = employees[0].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 8, 8), AppointmentTime = new TimeSpan(10, 0, 0), Status = "Cancelled", Comment = "Follow-up appointment" },
-                new Appointment { UserId = users[0].UserId, EmployeeId = employees[0].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 8, 17), AppointmentTime = new TimeSpan(16, 0, 0), Status = "Cancelled", Comment = "Evening appointment" },
-                new Appointment { UserId = users[0].UserId, EmployeeId = employees[1].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = new DateTime(2025, 8, 20), AppointmentTime = new TimeSpan(12, 0, 0), Status = "Cancelled", Comment = "Lunch time appointment" },
-                new Appointment { UserId = users[1].UserId, EmployeeId = employees[1].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = DateTime.Today.AddDays(1), AppointmentTime = new TimeSpan(14, 0, 0), Status = "Scheduled", Comment = "New customer" },
+                new Appointment { UserId = users[0].UserId, EmployeeId = employees[0].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = today.AddDays(-25), AppointmentTime = new TimeSpan(9, 0, 0), Status = "Scheduled", Comment = "First time visit" },
+                new Appointment { UserId = users[0].UserId, EmployeeId = employees[0].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = today.AddDays(-20), AppointmentTime = new TimeSpan(9, 0, 0), Status = "Scheduled", Comment = "Regular customer" },
+                new Appointment { UserId = users[0].UserId, EmployeeId = employees[0].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = today.AddDays(-20), AppointmentTime = new TimeSpan(10, 0, 0), Status = "Cancelled", Comment = "Follow-up appointment" },
+                new Appointment { UserId = users[0].UserId, EmployeeId = employees[0].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = today.AddDays(-13), AppointmentTime = new TimeSpan(16, 0, 0), Status = "Cancelled", Comment = "Evening appointment" },
+                new Appointment { UserId = users[0].UserId, EmployeeId = employees[1].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = today.AddDays(-10), AppointmentTime = new TimeSpan(12, 0, 0), Status = "Cancelled", Comment = "Lunch time appointment" },
+                new Appointment { UserId = users[1].UserId, EmployeeId = employees[1].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = today.AddDays(1), AppointmentTime = new TimeSpan(14, 0, 0), Status = "Scheduled", Comment = "New customer" },
      };
 
             context.Appointments.AddRange(appointments);
@@ -382,18 +387,23 @@ namespace eHairdressers.Services.Database
             if (!existingOrders.Any())
             {
                 
+                // Order dates are anchored to "now" (rather than a fixed
+                // calendar date) so that reports which default to a recent
+                // window (e.g. "last 30 days") always have seeded data to
+                // show, no matter when the database is first created.
+                var today = DateTime.Now.Date;
                 var orders = new List<Orders>
                 {
-                    new Orders { UserId = users[0].UserId, OrderNumber = "ORD-001", TotalPrice = 280.0, OrderDate = new DateTime(2025, 8, 15, 14, 30, 0), Status = true },
-                    new Orders { UserId = users[0].UserId, OrderNumber = "ORD-002", TotalPrice = 165.0, OrderDate = new DateTime(2025, 8, 16, 16, 45, 0), Status = true },
-                    new Orders { UserId = users[1].UserId, OrderNumber = "ORD-003", TotalPrice = 200.0, OrderDate = new DateTime(2025, 8, 17, 11, 15, 0), Status = true },
-                    new Orders { UserId = users[1].UserId, OrderNumber = "ORD-004", TotalPrice = 150.0, OrderDate = new DateTime(2025, 8, 25, 13, 20, 0), Status = false },
-                    new Orders { UserId = users[2].UserId, OrderNumber = "ORD-005", TotalPrice = 320.0, OrderDate = new DateTime(2025, 8, 31, 15, 10, 0), Status = true },
-                    new Orders { UserId = users[2].UserId, OrderNumber = "ORD-006", TotalPrice = 180.0, OrderDate = new DateTime(2025, 8, 22, 10, 30, 0), Status = true },
-                    new Orders { UserId = users[3].UserId, OrderNumber = "ORD-007", TotalPrice = 95.0, OrderDate = new DateTime(2025, 8, 21, 17, 45, 0), Status = true },
-                    new Orders { UserId = users[3].UserId, OrderNumber = "ORD-008", TotalPrice = 250.0, OrderDate = new DateTime(2025, 8, 20, 12, 0, 0), Status = false },
-                    new Orders { UserId = users[4].UserId, OrderNumber = "ORD-009", TotalPrice = 175.0, OrderDate = new DateTime(2025, 8, 23, 14, 15, 0), Status = true },
-                    new Orders { UserId = users[0].UserId, OrderNumber = "ORD-010", TotalPrice = 300.0, OrderDate = new DateTime(2025, 8, 25, 16, 30, 0), Status = true }
+                    new Orders { UserId = users[0].UserId, OrderNumber = "ORD-001", TotalPrice = 280.0, OrderDate = today.AddDays(-3).Add(new TimeSpan(14, 30, 0)), Status = true },
+                    new Orders { UserId = users[0].UserId, OrderNumber = "ORD-002", TotalPrice = 165.0, OrderDate = today.AddDays(-5).Add(new TimeSpan(16, 45, 0)), Status = true },
+                    new Orders { UserId = users[1].UserId, OrderNumber = "ORD-003", TotalPrice = 200.0, OrderDate = today.AddDays(-7).Add(new TimeSpan(11, 15, 0)), Status = true },
+                    new Orders { UserId = users[1].UserId, OrderNumber = "ORD-004", TotalPrice = 150.0, OrderDate = today.AddDays(-9).Add(new TimeSpan(13, 20, 0)), Status = false },
+                    new Orders { UserId = users[2].UserId, OrderNumber = "ORD-005", TotalPrice = 320.0, OrderDate = today.AddDays(-21).Add(new TimeSpan(15, 10, 0)), Status = true },
+                    new Orders { UserId = users[2].UserId, OrderNumber = "ORD-006", TotalPrice = 180.0, OrderDate = today.AddDays(-13).Add(new TimeSpan(10, 30, 0)), Status = true },
+                    new Orders { UserId = users[3].UserId, OrderNumber = "ORD-007", TotalPrice = 95.0, OrderDate = today.AddDays(-11).Add(new TimeSpan(17, 45, 0)), Status = true },
+                    new Orders { UserId = users[3].UserId, OrderNumber = "ORD-008", TotalPrice = 250.0, OrderDate = today.AddDays(-19).Add(new TimeSpan(12, 0, 0)), Status = false },
+                    new Orders { UserId = users[4].UserId, OrderNumber = "ORD-009", TotalPrice = 175.0, OrderDate = today.AddDays(-15).Add(new TimeSpan(14, 15, 0)), Status = true },
+                    new Orders { UserId = users[0].UserId, OrderNumber = "ORD-010", TotalPrice = 300.0, OrderDate = today.AddDays(-17).Add(new TimeSpan(16, 30, 0)), Status = true }
                 };
 
                 context.Orders.AddRange(orders);

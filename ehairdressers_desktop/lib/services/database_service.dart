@@ -31,8 +31,39 @@ class DatabaseService {
     } else if (response.statusCode == 401) {
       throw Exception("Unauthorized");
     } else {
-      throw Exception("Something bad happened please try again");
+      throw Exception(_extractErrorMessage(response));
     }
+  }
+
+  static String _extractErrorMessage(http.Response response) {
+    try {
+      final decoded = jsonDecode(response.body);
+
+      if (decoded is Map<String, dynamic>) {
+        if (decoded['message'] != null) {
+          return decoded['message'].toString();
+        }
+
+        final validationMessages = <String>[];
+        decoded.forEach((field, errors) {
+          if (errors is List) {
+            for (final e in errors) {
+              validationMessages.add('$field: $e');
+            }
+          }
+        });
+        if (validationMessages.isNotEmpty) {
+          return validationMessages.join('; ');
+        }
+      }
+    } catch (_) {
+    }
+
+    if (response.body.isNotEmpty) {
+      return 'Server error (${response.statusCode}): ${response.body}';
+    }
+
+    return 'Server error (${response.statusCode})';
   }
 
   static Future<dynamic> createEmployee(Map<String, dynamic> employeeData, String endpoint) async {

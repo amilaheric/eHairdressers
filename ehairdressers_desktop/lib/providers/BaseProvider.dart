@@ -120,8 +120,38 @@ class BaseProvider<T> with ChangeNotifier {
     } else if (response.statusCode == 401) {
       throw new Exception("Unauthorized");
     } else {
-      throw new Exception("Something bad happened please try again");
+      throw new Exception(_extractErrorMessage(response));
     }
+  }
+
+  String _extractErrorMessage(http.Response response) {
+    try {
+      final decoded = jsonDecode(response.body);
+
+      if (decoded is Map<String, dynamic>) {
+        if (decoded['message'] != null) {
+          return decoded['message'].toString();
+        }
+
+        final validationMessages = <String>[];
+        decoded.forEach((field, errors) {
+          if (errors is List) {
+            for (final e in errors) {
+              validationMessages.add('$field: $e');
+            }
+          }
+        });
+        if (validationMessages.isNotEmpty) {
+          return validationMessages.join('; ');
+        }
+      }
+    } catch (_) {}
+
+    if (response.body.isNotEmpty) {
+      return 'Server error (${response.statusCode}): ${response.body}';
+    }
+
+    return 'Server error (${response.statusCode})';
   }
 
   Map<String, String> createHeaders() {

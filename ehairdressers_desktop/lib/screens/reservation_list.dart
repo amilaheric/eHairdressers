@@ -45,6 +45,10 @@ class _ReservationListState extends State<ReservationList> {
   // Search debounce
   Timer? _searchTimer;
 
+  // Scroll controllers so the table can show visible, draggable scrollbars
+  final ScrollController _verticalScrollController = ScrollController();
+  final ScrollController _horizontalScrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -61,6 +65,8 @@ class _ReservationListState extends State<ReservationList> {
   @override
   void dispose() {
     _searchTimer?.cancel();
+    _verticalScrollController.dispose();
+    _horizontalScrollController.dispose();
     super.dispose();
   }
 
@@ -159,14 +165,14 @@ class _ReservationListState extends State<ReservationList> {
       int compareResult = 0;
       switch (sortField) {
         case 'appointmentDate':
-          compareResult = (a.appointmentDate ?? '').compareTo(b.appointmentDate ?? '');
+          compareResult = _compareAppointmentDates(a.appointmentDate, b.appointmentDate);
           if (compareResult == 0) {
             // If dates are same, sort by time
-            compareResult = (a.appointmentTime ?? '').compareTo(b.appointmentTime ?? '');
+            compareResult = _compareAppointmentTimes(a.appointmentTime, b.appointmentTime);
           }
           break;
         case 'appointmentTime':
-          compareResult = (a.appointmentTime ?? '').compareTo(b.appointmentTime ?? '');
+          compareResult = _compareAppointmentTimes(a.appointmentTime, b.appointmentTime);
           break;
         case 'employeeName':
           compareResult = (a.employeeName ?? '').compareTo(b.employeeName ?? '');
@@ -240,6 +246,82 @@ class _ReservationListState extends State<ReservationList> {
     } catch (e) {
       return timeString;
     }
+  }
+
+  // Parses an appointment date string into an actual DateTime so it can be
+  // sorted chronologically. The API isn't guaranteed to always return ISO
+  // (yyyy-MM-dd) - it has been observed sending culture-formatted strings
+  // like "MM/dd/yyyy" - and comparing those as raw strings sorts wrong
+  // whenever appointments span a year boundary (e.g. "01/05/2026" would
+  // sort before "12/20/2025" as text, even though it's chronologically
+  // later). Parsing to a real DateTime avoids that regardless of format.
+  DateTime? _parseAppointmentDateValue(String? dateString) {
+    if (dateString == null || dateString.isEmpty) {
+      return null;
+    }
+
+    String dateOnly = dateString.trim();
+    if (dateOnly.contains('T')) {
+      dateOnly = dateOnly.split('T')[0];
+    } else if (dateOnly.contains(' ')) {
+      dateOnly = dateOnly.split(' ')[0];
+    }
+
+    final iso = DateTime.tryParse(dateOnly);
+    if (iso != null) {
+      return iso;
+    }
+
+    try {
+      return DateFormat('MM/dd/yyyy').parse(dateOnly);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Converts an appointment time string into minutes-since-midnight for a
+  // reliable chronological comparison, regardless of exact source format.
+  int? _parseAppointmentTimeValue(String? timeString) {
+    if (timeString == null || timeString.isEmpty) {
+      return null;
+    }
+
+    try {
+      if (timeString.contains('T')) {
+        final dt = DateTime.parse(timeString);
+        return dt.hour * 60 + dt.minute;
+      }
+      final parts = timeString.split(':');
+      if (parts.length >= 2) {
+        final h = int.tryParse(parts[0]);
+        final m = int.tryParse(parts[1]);
+        if (h != null && m != null) {
+          return h * 60 + m;
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  int _compareAppointmentDates(String? a, String? b) {
+    final dateA = _parseAppointmentDateValue(a);
+    final dateB = _parseAppointmentDateValue(b);
+    if (dateA == null && dateB == null) return 0;
+    if (dateA == null) return -1;
+    if (dateB == null) return 1;
+    return dateA.compareTo(dateB);
+  }
+
+  int _compareAppointmentTimes(String? a, String? b) {
+    final timeA = _parseAppointmentTimeValue(a);
+    final timeB = _parseAppointmentTimeValue(b);
+    if (timeA == null && timeB == null) {
+      // Fall back to a plain string compare if neither parses.
+      return (a ?? '').compareTo(b ?? '');
+    }
+    if (timeA == null) return -1;
+    if (timeB == null) return 1;
+    return timeA.compareTo(timeB);
   }
 
   void _onSearchChanged(String query) {
@@ -582,7 +664,18 @@ class _ReservationListState extends State<ReservationList> {
                                 style: TextStyle(fontSize: 18, color: Colors.grey),
                               ),
                             )
-                          : SingleChildScrollView(
+                          : Scrollbar(
+                          controller: _verticalScrollController,
+                          thumbVisibility: true,
+                          child: SingleChildScrollView(
+                          controller: _verticalScrollController,
+                          scrollDirection: Axis.vertical,
+                          child: Scrollbar(
+                          controller: _horizontalScrollController,
+                          thumbVisibility: true,
+                          notificationPredicate: (notification) => notification.depth == 1,
+                          child: SingleChildScrollView(
+                          controller: _horizontalScrollController,
                           scrollDirection: Axis.horizontal,
                           child: DataTable(
                             columns: [
@@ -667,8 +760,11 @@ class _ReservationListState extends State<ReservationList> {
                             }).toList(),
                           ),
                         ),
+                        ),
+                        ),
+                        ),
             ),
-            
+
             // Pagination Controls
             if (totalPages > 1)
               Container(

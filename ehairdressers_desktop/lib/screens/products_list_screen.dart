@@ -7,6 +7,7 @@ import 'package:ehairdressers_mobile/providers/BrandProvider.dart';
 import 'package:ehairdressers_mobile/providers/ProductCategoryProvider.dart';
 import 'package:ehairdressers_mobile/widgets/master_screen.dart';
 import 'package:ehairdressers_mobile/screens/product_insert_screen.dart';
+import 'package:ehairdressers_mobile/utils/error_messages.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
@@ -51,6 +52,10 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
   // Search debounce
   Timer? _searchTimer;
 
+  // Scroll controllers so the table can show visible, draggable scrollbars
+  final ScrollController _verticalScrollController = ScrollController();
+  final ScrollController _horizontalScrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -72,6 +77,8 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
   @override
   void dispose() {
     _searchTimer?.cancel();
+    _verticalScrollController.dispose();
+    _horizontalScrollController.dispose();
     super.dispose();
   }
 
@@ -250,24 +257,8 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
         ),
       );
     } catch (e) {
-      _showErrorDialog("Error deleting product: $e");
+      ErrorMessages.show(context, e, title: "Error Deleting Product");
     }
-  }
-
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text("Error"),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("OK")
-          )
-        ],
-      )
-    );
   }
 
   void _showDeleteConfirmation(Product product) {
@@ -583,7 +574,18 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
                                 style: TextStyle(fontSize: 18, color: Colors.grey),
                               ),
                             )
-                          : SingleChildScrollView(
+                          : Scrollbar(
+                          controller: _verticalScrollController,
+                          thumbVisibility: true,
+                          child: SingleChildScrollView(
+                          controller: _verticalScrollController,
+                          scrollDirection: Axis.vertical,
+                          child: Scrollbar(
+                          controller: _horizontalScrollController,
+                          thumbVisibility: true,
+                          notificationPredicate: (notification) => notification.depth == 1,
+                          child: SingleChildScrollView(
+                          controller: _horizontalScrollController,
                           scrollDirection: Axis.horizontal,
                           child: DataTable(
                             columns: [
@@ -648,8 +650,11 @@ class _ProductsListScreenState extends State<ProductsListScreen> {
                             }).toList(),
                           ),
                         ),
+                        ),
+                        ),
+                        ),
             ),
-            
+
             // Pagination Controls
             if (totalPages > 1)
               Container(

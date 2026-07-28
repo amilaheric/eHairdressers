@@ -9,6 +9,8 @@ import 'package:ehairdressers_mobile/widgets/master_screen.dart';
 import 'package:ehairdressers_mobile/widgets/validation_field.dart';
 import 'package:ehairdressers_mobile/utils/validation_utils.dart';
 import 'package:ehairdressers_mobile/utils/success_messages.dart';
+import 'package:ehairdressers_mobile/utils/error_messages.dart';
+import 'package:ehairdressers_mobile/screens/employee_list_screen.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -125,7 +127,12 @@ class _EmployeeAddState extends State<EmployeeAdd> {
                               // Creating new employee
                               await _employeeProvider.createEmployeeWithRole(request);
                               SuccessMessages.showEmployeeCreated(context);
-                              Navigator.pop(context);
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => EmployeeListScreen(),
+                                ),
+                              );
                             } else {
                               // Updating existing employee
                               request['userId'] = widget.user!.userId;
@@ -134,12 +141,13 @@ class _EmployeeAddState extends State<EmployeeAdd> {
                               Navigator.pop(context);
                             }
                           } on Exception catch (e) {
-                            _showErrorDialog(context, "Error", e.toString());
+                            ErrorMessages.show(context, e);
                           }
                         } else {
                           // Form validation failed
-                          _showErrorDialog(context, "Validation Error", 
-                              "Please fix the errors in the form before submitting.");
+                          ErrorMessages.show(context,
+                              "Please fix the errors highlighted in the form before submitting.",
+                              title: "Validation Error");
                         }
                       },
                       child: Text(widget.user == null ? "Save" : "Update"),
@@ -151,22 +159,6 @@ class _EmployeeAddState extends State<EmployeeAdd> {
                 SizedBox(height: 20),
               ]),
             )));
-  }
-
-  void _showErrorDialog(BuildContext context, String title, String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("OK")
-          )
-        ],
-      )
-    );
   }
 
   FormBuilder _buildEmployeeform() {

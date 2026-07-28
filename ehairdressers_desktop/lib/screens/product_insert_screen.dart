@@ -12,6 +12,7 @@ import 'package:ehairdressers_mobile/widgets/master_screen.dart';
 import 'package:ehairdressers_mobile/widgets/validation_field.dart';
 import 'package:ehairdressers_mobile/utils/validation_utils.dart';
 import 'package:ehairdressers_mobile/utils/success_messages.dart';
+import 'package:ehairdressers_mobile/utils/error_messages.dart';
 import 'package:ehairdressers_mobile/screens/products_list_screen.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -47,27 +48,22 @@ class _ProductInsertState extends State<ProductInsert> {
   }
 
   void _initializeEditForm() {
-    // Initialize form with existing product data for editing
-    setState(() {
-      // This will be handled in the form initialization
-    });
+    setState(() {});
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    
+
     try {
       _productProvider = context.read<ProductProvider>();
       _brandProvider = context.read<BrandProvider>();
       _categoryProvider = context.read<ProductCategoryProvider>();
-      
+
       if (_brandProvider != null && _categoryProvider != null) {
         initForm();
       }
-    } catch (e) {
-
-    }
+    } catch (e) {}
   }
 
   Future initForm() async {
@@ -99,7 +95,7 @@ class _ProductInsertState extends State<ProductInsert> {
 
   void _resetForm() {
     _formKey.currentState?.reset();
-    
+
     setState(() {
       selectedImage = null;
       _base64Image = null;
@@ -114,27 +110,27 @@ class _ProductInsertState extends State<ProductInsert> {
             margin: EdgeInsets.only(top: 30),
             child: SingleChildScrollView(
               child: Column(children: [
-                isLoading ? Center(child: CircularProgressIndicator()) : _buildForm(),
+                isLoading
+                    ? Center(child: CircularProgressIndicator())
+                    : _buildForm(),
                 SizedBox(height: 20),
                 Align(
                     alignment: Alignment.center,
                     child: ElevatedButton(
                       onPressed: () async {
                         if (_formKey.currentState?.saveAndValidate() ?? false) {
-                          var request = Map<String, dynamic>.from(_formKey.currentState!.value);
-                          
-                          // Add image if selected
+                          var request = Map<String, dynamic>.from(
+                              _formKey.currentState!.value);
+
                           if (_base64Image != null) {
                             request['image'] = _base64Image;
                           }
-                          
+
                           try {
                             if (widget.product == null) {
-                              // Creating new product
                               await _productProvider.insert(request);
                               SuccessMessages.showProductCreated(context);
                               _resetForm();
-                              // Navigate to products list after successful creation
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
@@ -142,50 +138,34 @@ class _ProductInsertState extends State<ProductInsert> {
                                 ),
                               );
                             } else {
-                              // Updating existing product
                               request['id'] = widget.product!.id;
-                              await _productProvider.update(widget.product!.id!, request);
+                              await _productProvider.update(
+                                  widget.product!.id!, request);
                               SuccessMessages.showProductUpdated(context);
-                              Navigator.pop(context, true); // Return true to indicate success
+                              Navigator.pop(context, true);
                             }
                           } on Exception catch (e) {
-                            _showErrorDialog(context, "Error", e.toString());
+                            ErrorMessages.show(context, e);
                           }
                         } else {
-                          // Form validation failed
-                          _showErrorDialog(context, "Validation Error", 
-                              "Please fix the errors in the form before submitting.");
+                          ErrorMessages.show(context,
+                              "Please fix the errors highlighted in the form before submitting.",
+                              title: "Validation Error");
                         }
                       },
                       child: Text(widget.product == null ? "Save" : "Update"),
                       style: ElevatedButton.styleFrom(
                           backgroundColor: Color.fromARGB(255, 247, 233, 211),
                           foregroundColor: Color(0x0FF938f94),
-                          padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15)),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 30, vertical: 15)),
                     )),
                 SizedBox(height: 20),
               ]),
             )));
   }
 
-  void _showErrorDialog(BuildContext context, String title, String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("OK")
-          )
-        ],
-      )
-    );
-  }
-
   FormBuilder _buildForm() {
-    // Initialize form values for editing
     Map<String, dynamic> initialValues = {};
     if (widget.product != null) {
       initialValues = {
@@ -209,7 +189,6 @@ class _ProductInsertState extends State<ProductInsert> {
             width: 600,
             child: Column(
               children: [
-                // Image section
                 Container(
                   width: 200,
                   height: 200,
@@ -226,16 +205,14 @@ class _ProductInsertState extends State<ProductInsert> {
                 ),
                 SizedBox(height: 15),
                 ElevatedButton.icon(
-                    onPressed: pickImage,
-                    icon: Icon(Icons.image),
-                    label: Text('Select Image'),
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Color.fromARGB(255, 247, 233, 211),
-                        foregroundColor: Color(0x0FF938f94)),
+                  onPressed: pickImage,
+                  icon: Icon(Icons.image),
+                  label: Text('Select Image'),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor: Color.fromARGB(255, 247, 233, 211),
+                      foregroundColor: Color(0x0FF938f94)),
                 ),
                 SizedBox(height: 20),
-                
-                // Form fields with validation
                 ValidationField(
                   name: 'name',
                   label: 'Product Name',
@@ -243,7 +220,6 @@ class _ProductInsertState extends State<ProductInsert> {
                   validator: ValidationUtils.validateProductName,
                 ),
                 SizedBox(height: 15),
-                
                 ValidationField(
                   name: 'code',
                   label: 'Product Code',
@@ -251,7 +227,6 @@ class _ProductInsertState extends State<ProductInsert> {
                   validator: ValidationUtils.validateProductCode,
                 ),
                 SizedBox(height: 15),
-                
                 ValidationField(
                   name: 'price',
                   label: 'Price',
@@ -260,7 +235,6 @@ class _ProductInsertState extends State<ProductInsert> {
                   validator: ValidationUtils.validatePrice,
                 ),
                 SizedBox(height: 15),
-                
                 ValidationField(
                   name: 'description',
                   label: 'Description',
@@ -270,7 +244,6 @@ class _ProductInsertState extends State<ProductInsert> {
                   validator: ValidationUtils.validateProductDescription,
                 ),
                 SizedBox(height: 15),
-                
                 ValidationField(
                   name: 'amount',
                   label: 'Amount',
@@ -279,21 +252,21 @@ class _ProductInsertState extends State<ProductInsert> {
                   validator: ValidationUtils.validateAmount,
                 ),
                 SizedBox(height: 15),
-                
                 ValidationDropdown<String>(
                   name: 'brandId',
                   label: 'Brand',
                   hint: 'Select brand',
-                  validator: (value) => ValidationUtils.validateRequired(value, 'Brand'),
+                  validator: (value) =>
+                      ValidationUtils.validateRequired(value, 'Brand'),
                   items: _buildBrandItems(),
                 ),
                 SizedBox(height: 15),
-                
                 ValidationDropdown<String>(
                   name: 'categoryId',
                   label: 'Category',
                   hint: 'Select category',
-                  validator: (value) => ValidationUtils.validateRequired(value, 'Category'),
+                  validator: (value) =>
+                      ValidationUtils.validateRequired(value, 'Category'),
                   items: _buildCategoryItems(),
                 ),
               ],
@@ -304,21 +277,23 @@ class _ProductInsertState extends State<ProductInsert> {
 
   List<DropdownMenuItem<String>> _buildBrandItems() {
     return brandResult?.result
-        ?.map((item) => DropdownMenuItem(
-              alignment: AlignmentDirectional.center,
-              value: item.id?.toString() ?? "",
-              child: Text(item.name ?? ""),
-            ))
-        .toList() ?? [];
+            ?.map((item) => DropdownMenuItem(
+                  alignment: AlignmentDirectional.center,
+                  value: item.id?.toString() ?? "",
+                  child: Text(item.name ?? ""),
+                ))
+            .toList() ??
+        [];
   }
 
   List<DropdownMenuItem<String>> _buildCategoryItems() {
     return categoryResult?.result
-        ?.map((item) => DropdownMenuItem(
-              alignment: AlignmentDirectional.center,
-              value: item.id?.toString() ?? "",
-              child: Text(item.name ?? ""),
-            ))
-        .toList() ?? [];
+            ?.map((item) => DropdownMenuItem(
+                  alignment: AlignmentDirectional.center,
+                  value: item.id?.toString() ?? "",
+                  child: Text(item.name ?? ""),
+                ))
+            .toList() ??
+        [];
   }
 }

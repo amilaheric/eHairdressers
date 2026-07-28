@@ -9,6 +9,7 @@ import 'package:printing/printing.dart';
 import '../models/product_sales_report.dart';
 import '../providers/ProductSalesReportProvider.dart';
 import '../widgets/master_screen.dart';
+import '../utils/error_messages.dart';
 
 class ProductSalesReportScreen extends StatefulWidget {
   @override
@@ -17,7 +18,11 @@ class ProductSalesReportScreen extends StatefulWidget {
 
 class _ProductSalesReportScreenState extends State<ProductSalesReportScreen> {
   late ProductSalesReportProvider _reportProvider;
-  DateTime _startDate = DateTime.now().subtract(Duration(days: 30));
+  // Default to a wide window (~13 months) rather than the last 30 days.
+  // Order history (including seeded demo data) can be many months old, and a
+  // 30-day default made it look like report generation was broken when it
+  // was really just an empty result for that narrow window.
+  DateTime _startDate = DateTime.now().subtract(Duration(days: 400));
   DateTime _endDate = DateTime.now();
   String _selectedReportType = 'sales';
   List<ProductSalesReport> _reportData = [];
@@ -453,10 +458,11 @@ class _ProductSalesReportScreenState extends State<ProductSalesReportScreen> {
       setState(() {
         _isLoading = false;
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error generating report: $e'),
+          content: Text(
+              'Error generating report: ${ErrorMessages.extractMessage(e)}'),
           backgroundColor: Colors.red,
         ),
       );

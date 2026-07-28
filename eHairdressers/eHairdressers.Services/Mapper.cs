@@ -28,7 +28,14 @@ namespace eHairdressers.Services
             CreateMap<Database.Appointment, Model.Appointment>()
                 .ForMember(dest => dest.ServiceName, opt => opt.MapFrom(src => src.Service != null ? src.Service.ServiceName : null))
                 .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.User != null ? src.User.Username : null))
-                .ForMember(dest => dest.EmployeeName, opt => opt.MapFrom(src => src.Employee != null ? src.Employee.Name : null));
+                .ForMember(dest => dest.EmployeeName, opt => opt.MapFrom(src => src.Employee != null ? src.Employee.Name : null))
+                // Explicit, culture-invariant, ISO-8601 formats. Without this,
+                // AutoMapper falls back to DateTime.ToString() using the
+                // server's current culture (e.g. "08/08/2025 00:00:00"),
+                // which sorts incorrectly across year/month boundaries when
+                // compared as plain strings on the client.
+                .ForMember(dest => dest.AppointmentDate, opt => opt.MapFrom(src => src.AppointmentDate.ToString("yyyy-MM-dd")))
+                .ForMember(dest => dest.AppointmentTime, opt => opt.MapFrom(src => src.AppointmentTime.ToString(@"hh\:mm\:ss")));
             CreateMap<Database.Service, Model.Service>();
             CreateMap<Database.Employees, Model.Employees>();
 
