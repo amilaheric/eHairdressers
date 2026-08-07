@@ -8,5 +8,6 @@ namespace eHairdressers.Services
     {
         Task<List<ChatRoom>> GetChatRoomsByUserId(int userId);
         Task<ChatRoom> GetChatRoomWithUsers(int chatRoomId);
+        Task<int> DeactivateInactiveChatRooms(int retentionDays);
     }
 }

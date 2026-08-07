@@ -157,16 +157,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
       var messages = await _chatProvider.getChatMessages(_currentChatRoomId!);
       await _chatProvider.markMessagesAsRead(_currentChatRoomId!, Authorization.currentUserId);
-      
-      var now = DateTime.now();
-      var recentMessages = messages.where((message) {
-        var messageDate = DateTime.tryParse(message.messageDate);
-        if (messageDate == null) return false;
-        return now.difference(messageDate).inMinutes <= 10;
-      }).toList();
-      
+
       setState(() {
-        _messages = recentMessages;
+        _messages = messages;
         _isLoading = false;
       });
       
@@ -387,67 +380,14 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  void _handleUserAction(String action) {
-    switch (action) {
-      case 'test_customer':
-        Authorization.currentUserId = 1;
-        Authorization.userRole = 'User';
-        break;
-      case 'test_employee':
-        Authorization.currentUserId = 2;
-        Authorization.userRole = 'Admin';
-        break;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return MasterScreenWidget(
       title: widget.chatRoom.name ?? widget.chatRoom.roomName ?? 'Chat Room',
       userId: widget.userId,
       showFloatingChat: false,
-      actions: [
-        PopupMenuButton<String>(
-          icon: Icon(Icons.person),
-          tooltip: 'User Info & Test',
-          onSelected: (value) {
-            _handleUserAction(value);
-          },
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              value: 'info',
-              child: Text('User ID: ${Authorization.currentUserId}'),
-            ),
-            PopupMenuItem(
-              value: 'role',
-              child: Text('Role: ${Authorization.userRole ?? 'Unknown'}'),
-            ),
-            PopupMenuItem(
-              value: 'test_customer',
-              child: Text('Test as Customer'),
-            ),
-          ],
-        ),
-      ],
       child: Column(
         children: [
-          // Chat room status indicator
-          if (_hasChatRoom && _currentChatRoomId != null)
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-              color: Colors.green[50],
-              child: Text(
-                'Chat Room Active (ID: $_currentChatRoomId)',
-                style: TextStyle(
-                  color: Colors.green[700],
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          
           Expanded(
             child: _isLoading
                 ? Center(

@@ -26,6 +26,42 @@ namespace eHairdressers.Services
             return _mapper.Map<List<Model.ChatRoom>>(chatRooms);
         }
 
+        public override IQueryable<Database.ChatRoom> AddFilter(IQueryable<Database.ChatRoom> query, BaseSearchObject? search = null)
+        {
+            return query.Where(cr => cr.IsActive);
+        }
+
+        public async Task<int> DeactivateInactiveChatRooms(int retentionDays)
+        {
+            var cutoffDate = DateTime.Now.AddDays(-retentionDays);
+
+            var candidateRooms = await _context.ChatRooms
+                .Where(cr => cr.IsActive)
+                .Include(cr => cr.Messages)
+                .ToListAsync();
+
+            var roomsToDeactivate = candidateRooms.Where(cr =>
+            {
+                var lastActivity = cr.Messages.Any()
+                    ? cr.Messages.Max(m => m.SentDate)
+                    : cr.CreatedDate;
+
+                return lastActivity < cutoffDate;
+            }).ToList();
+
+            foreach (var room in roomsToDeactivate)
+            {
+                room.IsActive = false;
+            }
+
+            if (roomsToDeactivate.Count > 0)
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            return roomsToDeactivate.Count;
+        }
+
         public async Task<Model.ChatRoom> GetChatRoomWithUsers(int chatRoomId)
         {
             var chatRoom = await _context.ChatRooms

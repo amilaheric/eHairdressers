@@ -72,6 +72,7 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddTransient<IReviewService, ReviewService>();
 builder.Services.AddTransient<IChatRoomService, ChatRoomService>();
+builder.Services.AddHostedService<eHairdressers.Services.ChatRoomCleanupService>();
 builder.Services.AddTransient<IMessageService, MessageService>();
 builder.Services.AddTransient<INotificationService, NotificationService>();
 builder.Services.AddTransient<IProductSalesReportService, ProductSalesReportService>();
