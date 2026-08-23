@@ -42,6 +42,11 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Data Source=sqlserver;Initial Catalog=IB160064;User ID=sa;Password=Password123!;TrustServerCertificate=True
       - Stripe__PublishableKey=${STRIPE_PUBLISHABLE_KEY}
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__VirtualHost=/
+      - RabbitMQ__Username=admin
+      - RabbitMQ__Password=admin123
 
     secrets:
       - stripe_secret_key

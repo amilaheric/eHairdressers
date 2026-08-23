@@ -82,19 +82,16 @@ builder.Services.AddTransient<IUserRoleService, UserRoleService>();
 builder.Services.AddTransient<IRecommendationService, RecommendationService>();
 
 
-builder.Services.AddSingleton<IBus>(provider =>
-{
-    var connectionString = "host=rabbitmq;port=5672;virtualHost=/;username=admin;password=admin123";
-    var bus = RabbitHutch.CreateBus(connectionString);
-    
-    var lifetime = provider.GetService<IHostApplicationLifetime>();
-    if (lifetime != null)
-    {
-        lifetime.ApplicationStopping.Register(() => bus.Dispose());
-    }
-    
-    return bus;
-});
+var rabbitMqSection = builder.Configuration.GetSection("RabbitMQ");
+var rabbitMqHost = rabbitMqSection["Host"];
+var rabbitMqPort = rabbitMqSection["Port"];
+var rabbitMqVirtualHost = rabbitMqSection["VirtualHost"];
+var rabbitMqUsername = rabbitMqSection["Username"];
+var rabbitMqPassword = rabbitMqSection["Password"];
+var rabbitMqConnectionString =
+    $"host={rabbitMqHost};port={rabbitMqPort};virtualHost={rabbitMqVirtualHost};username={rabbitMqUsername};password={rabbitMqPassword}";
+
+builder.Services.AddEasyNetQ(rabbitMqConnectionString);
 
 
 builder.Services.AddTransient<IMessagingService, MessagingService>();
@@ -102,7 +99,7 @@ builder.Services.AddTransient<IEmployeeService, EmployeeService>();
 
 
 
-builder.Services.AddAutoMapper(typeof(IProductsService));
+builder.Services.AddAutoMapper(cfg => { }, typeof(IProductsService));
 
 
 builder.Services.AddAuthentication("BasicAuthentication")
