@@ -47,12 +47,41 @@ services:
       - RabbitMQ__VirtualHost=/
       - RabbitMQ__Username=admin
       - RabbitMQ__Password=admin123
+      - Jwt__Key=${JWT_SECRET_KEY}
+      - Jwt__Issuer=eHairdressers
+      - Jwt__Audience=eHairdressersClient
+      - Jwt__ExpiryMinutes=120
 
     secrets:
       - stripe_secret_key
       - stripe_webhook_secret
     depends_on:
       - sqlserver
+      - rabbitmq
+    networks:
+      - ehairdressers_network
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: eHairdressers.Worker/Dockerfile
+    container_name: ehairdressers_worker
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__VirtualHost=/
+      - RabbitMQ__Username=admin
+      - RabbitMQ__Password=admin123
+      - Smtp__Host=${SMTP_HOST:-}
+      - Smtp__Port=${SMTP_PORT:-587}
+      - Smtp__Username=${SMTP_USERNAME:-}
+      - Smtp__Password=${SMTP_PASSWORD:-}
+      - Smtp__UseSsl=${SMTP_USE_SSL:-true}
+      - Smtp__FromAddress=${SMTP_FROM_ADDRESS:-noreply@ehairdressers.local}
+      - Smtp__FromName=eHairdressers
+    depends_on:
       - rabbitmq
     networks:
       - ehairdressers_network

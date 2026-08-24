@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../main.dart';
+import '../providers/UserProvider.dart';
 import '../screens/reservation_list.dart';
 import '../screens/product_insert_screen.dart';
 import '../screens/products_list_screen.dart';
@@ -92,6 +95,19 @@ class _MasterScreenWidgetState extends State<MasterScreenWidget> {
               title: Text("Back"),
               onTap: () {
                 Navigator.of(context).pop();
+              },
+            ),
+            Divider(),
+            ListTile(
+              leading: Icon(Icons.logout, color: Colors.red[600]),
+              title: Text("Logout", style: TextStyle(color: Colors.red[600])),
+              onTap: () async {
+                Navigator.of(context).pop();
+                await context.read<UserProvider>().logout();
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => Login()),
+                  (route) => false,
+                );
               },
             ),
           ],

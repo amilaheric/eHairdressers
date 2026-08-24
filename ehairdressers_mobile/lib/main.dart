@@ -18,6 +18,8 @@ import 'package:flutter/material.dart' hide Card;
 import 'package:flutter/material.dart' as material show Card;
 import 'package:provider/provider.dart';
 import 'package:flutter_stripe/flutter_stripe.dart' hide Card;
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'dart:io';
 
 void main() async {
@@ -92,12 +94,16 @@ class MyHomePage extends StatelessWidget {
   TextEditingController _usernameController = new TextEditingController();
   TextEditingController _passwordController = new TextEditingController();
   late ProductProvider _productProvider;
-  late UserProvider _userProvider;
+
+  static String get _baseUrl {
+    const String baseUrl =
+        String.fromEnvironment("baseUrl", defaultValue: "http://10.0.2.2:7051/");
+    return baseUrl.endsWith("/") ? baseUrl : "$baseUrl/";
+  }
 
   @override
   Widget build(BuildContext context) {
     _productProvider = context.read<ProductProvider>();
-    _userProvider = context.read<UserProvider>();
 
     return Scaffold(
         body: Center(
@@ -136,43 +142,47 @@ class MyHomePage extends StatelessWidget {
                       var username = _usernameController.text;
                       var password = _passwordController.text;
 
-                      Authorization.username = username;
-                      Authorization.password = password;
-
                       try {
-                        await _productProvider.get();
+                        // Authenticate against the real login endpoint - it
+                        // both verifies the password and issues the JWT used
+                        // for every subsequent request. No credentials are
+                        // stored after this point, only the token.
+                        var uri = Uri.parse("${_baseUrl}User/login");
+                        var response = await http.post(
+                          uri,
+                          headers: {"Content-Type": "application/json"},
+                          body: jsonEncode({
+                            "Username": username,
+                            "Password": password,
+                          }),
+                        );
 
-                        var users = await _userProvider.get();
-
-                        var authenticatedUser = users.firstWhere(
-                            (user) =>
-                                user.username?.toLowerCase() ==
-                                username.toLowerCase(),
-                            orElse: () =>
-                                throw Exception('User not found in database'));
-
-                        Authorization.currentUserId =
-                            authenticatedUser.userId ?? 1;
-
-                        String userRole = 'User';
-                        if (authenticatedUser.userRoles != null &&
-                            authenticatedUser.userRoles!.isNotEmpty) {
-                          for (var userRoleData
-                              in authenticatedUser.userRoles!) {
-                            if (userRoleData is Map<String, dynamic>) {
-                              var role = userRoleData['Role'];
-                              if (role != null && role['Name'] == 'Employee') {
-                                userRole = 'Employee';
-                                break;
-                              }
-                            }
-                          }
+                        if (response.statusCode != 200) {
+                          throw Exception("Incorrect username or password");
                         }
-                        Authorization.userRole = userRole;
+
+                        var data = jsonDecode(response.body);
+
+                        Authorization.token = data["Token"] ?? data["token"];
+                        Authorization.username =
+                            data["Username"] ?? data["username"] ?? username;
+                        Authorization.currentUserId =
+                            data["UserId"] ?? data["userId"] ?? 1;
+                        Authorization.userEmail =
+                            data["Email"] ?? data["email"];
+
+                        var roles = (data["Roles"] ?? data["roles"] ?? [])
+                            .cast<String>();
+                        Authorization.roles = List<String>.from(roles);
+                        Authorization.userRole =
+                            roles.contains("Employee") ? "Employee" : "User";
+
+                        await _productProvider.get();
 
                         Navigator.of(context).push(MaterialPageRoute(
                             builder: (context) => ProductListScreen()));
                       } catch (e) {
+                        Authorization.clear();
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text('Login failed: $e'),

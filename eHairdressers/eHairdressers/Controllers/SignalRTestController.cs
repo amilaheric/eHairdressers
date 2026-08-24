@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using eHairdressers.Hubs;
@@ -6,6 +7,7 @@ namespace eHairdressers.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class SignalRTestController : ControllerBase
     {
         private readonly IHubContext<ChatHub> _hubContext;

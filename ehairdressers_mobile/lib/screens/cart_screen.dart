@@ -114,9 +114,9 @@ class _CartScreenState extends State<CartScreen> {
                             Expanded(
                       child: IconButton(
                           onPressed: () {
-                            if (_cartProvider != null) {
+                            setState(() {
                               _cartProvider.removeFromCart(item.product);
-                            }
+                            });
                           },
                           icon: Icon(Icons.delete)))
         ]),

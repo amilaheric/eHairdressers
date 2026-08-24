@@ -1,12 +1,14 @@
 using eHairdressers.Model;
 using eHairdressers.Model.Requests;
 using eHairdressers.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace eHairdressers.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Admin")]
     public class SalonOperationsReportController : ControllerBase
     {
         private readonly ISalonOperationsReportService _reportService;

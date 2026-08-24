@@ -12,14 +12,11 @@ class DatabaseService {
   }
 
   static Map<String, String> _createHeaders() {
-    String username = Authorization.username ?? "";
-    String password = Authorization.password ?? "";
-    String basicAuth =
-        "Basic ${base64Encode(utf8.encode('$username:$password'))}";
+    String token = Authorization.token ?? "";
 
     var headers = {
       "Content-Type": "application/json",
-      "Authorization": basicAuth
+      "Authorization": "Bearer $token"
     };
 
     return headers;

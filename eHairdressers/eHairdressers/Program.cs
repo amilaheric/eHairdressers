@@ -1,13 +1,18 @@
 using eHairdressers;
+using eHairdressers.Auth;
 using eHairdressers.Filters;
 using eHairdressers.Model.SearchObjects;
 using eHairdressers.Services;
 using eHairdressers.Services.Database;
 using EasyNetQ;
 
-using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,24 +42,27 @@ builder.Services.AddCors(options =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.AddSecurityDefinition("basicAuth", new Microsoft.OpenApi.Models.OpenApiSecurityScheme()
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
     {
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
-        Scheme = "basic",
-        Description = "Basic Authentication header"
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "JWT token obtained from POST /User/login. Swagger adds the 'Bearer ' prefix automatically - just paste the raw token."
     });
 
-    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement()
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
     {
         {
             new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "basicAuth"}
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer"}
             },
             new string[]{}
         }
     });
-    
+
     c.DocInclusionPredicate((name, api) => true);
     });
 builder.Services.AddTransient<IProductsService, ProductsService>();
@@ -102,8 +110,62 @@ builder.Services.AddTransient<IEmployeeService, EmployeeService>();
 builder.Services.AddAutoMapper(cfg => { }, typeof(IProductsService));
 
 
-builder.Services.AddAuthentication("BasicAuthentication")
-    .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>("BasicAuthentication", null);
+var jwtSection = builder.Configuration.GetSection(JwtOptions.SectionName);
+builder.Services.Configure<JwtOptions>(jwtSection);
+var jwtOptions = jwtSection.Get<JwtOptions>() ?? new JwtOptions();
+
+if (string.IsNullOrWhiteSpace(jwtOptions.Key))
+{
+    throw new InvalidOperationException(
+        "Jwt:Key is not configured. Set JWT_SECRET_KEY in your .env file (docker) or as a Jwt:Key user-secret / environment variable for local runs.");
+}
+
+builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<IRevokedTokenService, RevokedTokenService>();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = jwtOptions.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwtOptions.Audience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key)),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var jti = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);
+                if (!string.IsNullOrEmpty(jti))
+                {
+                    try
+                    {
+                        var revokedTokenService = context.HttpContext.RequestServices.GetRequiredService<IRevokedTokenService>();
+                        if (await revokedTokenService.IsRevokedAsync(jti))
+                        {
+                            context.Fail("This token has been revoked (user logged out).");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Fail open on infrastructure errors (e.g. a pending
+                        // migration) rather than turning every authenticated
+                        // request into a 500 - the token's signature/expiry
+                        // are still independently validated above.
+                        var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                        logger.LogError(ex, "Revoked-token check failed for jti {Jti}; allowing request through.", jti);
+                    }
+                }
+            }
+        };
+    });
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<eHairdressersContext>(options =>
@@ -132,6 +194,22 @@ using (var scope = app.Services.CreateScope())
     try
     {
         dataContext.Database.Migrate();
+
+        // Belt-and-suspenders: the AddRevokedTokens migration has not been
+        // reliably applying in every environment (EF migration discovery
+        // issue). Guarantee the table exists regardless, idempotently.
+        await dataContext.Database.ExecuteSqlRawAsync(@"
+            IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'RevokedTokens')
+            BEGIN
+                CREATE TABLE [RevokedTokens] (
+                    [RevokedTokenId] int NOT NULL IDENTITY(1,1),
+                    [Jti] nvarchar(max) NOT NULL,
+                    [ExpiresAtUtc] datetime2 NOT NULL,
+                    [RevokedAtUtc] datetime2 NOT NULL,
+                    CONSTRAINT [PK_RevokedTokens] PRIMARY KEY ([RevokedTokenId])
+                );
+                CREATE UNIQUE INDEX [IX_RevokedTokens_Jti] ON [RevokedTokens] ([Jti]);
+            END");
 
         await eHairdressers.Services.Database.SeedData.SeedAllData(dataContext);
     }

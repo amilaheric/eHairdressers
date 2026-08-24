@@ -34,13 +34,16 @@ namespace eHairdressers.Services
         }
         private async Task<Database.User?> GetCurrentUserAsync()
         {
-            var username = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(username))
+            // NameIdentifier holds the numeric UserId (see JwtTokenService),
+            // not the username - it changed meaning when auth moved from
+            // Basic Auth to JWT.
+            var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdClaim, out var userId))
             {
                 return null;
             }
 
-            return await _context.User.FirstOrDefaultAsync(u => u.Username == username);
+            return await _context.User.FirstOrDefaultAsync(u => u.UserId == userId);
         }
 
         private bool IsPrivilegedCaller()

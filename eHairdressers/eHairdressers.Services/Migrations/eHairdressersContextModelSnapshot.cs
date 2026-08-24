@@ -405,6 +405,32 @@ namespace eHairdressers.Services.Migrations
                     b.ToTable("Reviews");
                 });
 
+            modelBuilder.Entity("eHairdressers.Services.Database.RevokedToken", b =>
+                {
+                    b.Property<int>("RevokedTokenId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RevokedTokenId"));
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Jti")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("RevokedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("RevokedTokenId");
+
+                    b.HasIndex("Jti")
+                        .IsUnique();
+
+                    b.ToTable("RevokedTokens");
+                });
+
             modelBuilder.Entity("eHairdressers.Services.Database.Role", b =>
                 {
                     b.Property<int>("RoleId")

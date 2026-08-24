@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using eHairdressers.Model.Requests;
 using eHairdressers.Model.SearchObjects;
@@ -7,6 +8,7 @@ namespace eHairdressers.Controllers
 {
     [ApiController]
     [Route("[controller]")]
+    [Authorize]
     public class EmployeeController : ControllerBase
     {
         private readonly IEmployeeService _employeeService;
@@ -27,6 +29,7 @@ namespace eHairdressers.Controllers
         }
 
         [HttpPost("CreateEmployee")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateEmployee([FromBody] CreateEmployeeRequest request)
         {
             try
@@ -128,6 +131,7 @@ namespace eHairdressers.Controllers
 
 
         [HttpPut("{employeeId}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateEmployee(int employeeId, [FromBody] CreateEmployeeRequest request)
         {
             try
@@ -164,6 +168,7 @@ namespace eHairdressers.Controllers
         }
 
         [HttpDelete("{employeeId}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteEmployee(int employeeId)
         {
             try

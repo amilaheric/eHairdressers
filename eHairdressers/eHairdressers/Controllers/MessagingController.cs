@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using eHairdressers.Services;
 using eHairdressers.Model.Messages;
@@ -8,6 +9,7 @@ namespace eHairdressers.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class MessagingController : ControllerBase
     {
         private readonly IMessagingService _messagingService;

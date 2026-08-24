@@ -43,7 +43,10 @@ namespace eHairdressers.Services.Database
         public DbSet<ChatRoom> ChatRooms { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<ChatRoomUser> ChatRoomUsers { get; set; }
-        
+
+        // JWT auth
+        public DbSet<RevokedToken> RevokedTokens { get; set; }
+
 
 
 

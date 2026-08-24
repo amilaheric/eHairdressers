@@ -1,10 +1,12 @@
 using eHairdressers.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace eHairdressers.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class RealTimeChatController : ControllerBase
     {
         private readonly INotificationService _notificationService;

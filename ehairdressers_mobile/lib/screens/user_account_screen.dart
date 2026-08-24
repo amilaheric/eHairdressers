@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ehairdressers_mobile/main.dart';
 import 'package:ehairdressers_mobile/models/user_account.dart';
 import 'package:ehairdressers_mobile/providers/user_account_provider.dart';
 import 'package:ehairdressers_mobile/screens/order_history_screen.dart';
@@ -21,7 +22,7 @@ class UserAccountScreen extends StatefulWidget {
 
 class _UserAccountScreenState extends State<UserAccountScreen> {
   late UserAccountProvider _userAccountProvider;
-  
+
   UserAccount? _userAccount;
   List<LoyaltyBonus> _loyaltyBonuses = [];
   bool _isLoading = true;
@@ -39,21 +40,22 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
         _isLoading = true;
       });
 
-     
-      final comprehensiveData = await _userAccountProvider.getComprehensiveUserData(widget.userId);
-      
+      final comprehensiveData =
+          await _userAccountProvider.getComprehensiveUserData(widget.userId);
+
       if (comprehensiveData['success'] == true) {
         setState(() {
           _userAccount = comprehensiveData['userAccount'] as UserAccount?;
-          _loyaltyBonuses = comprehensiveData['loyaltyBonuses'] as List<LoyaltyBonus>;
+          _loyaltyBonuses =
+              comprehensiveData['loyaltyBonuses'] as List<LoyaltyBonus>;
           _isLoading = false;
         });
-        
-       
+
         if (_userAccount != null) {
           print('=== USER ACCOUNT DATA ===');
           print('Total Appointments: ${_userAccount!.totalAppointments}');
-          print('Completed Appointments: ${_userAccount!.completedAppointments}');
+          print(
+              'Completed Appointments: ${_userAccount!.completedAppointments}');
           print('Total Orders: ${_userAccount!.totalOrders}');
           print('Completed Orders: ${_userAccount!.completedOrders}');
           print('Total Spent: ${_userAccount!.totalSpent}');
@@ -62,13 +64,11 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
           print('Loyalty Discount: ${_userAccount!.loyaltyDiscount}');
         }
       } else {
-       
         setState(() {
           _isLoading = false;
         });
       }
     } catch (e) {
-     
       setState(() {
         _isLoading = false;
       });
@@ -124,27 +124,14 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-         
           _buildProfileHeader(),
-          
           SizedBox(height: 24),
-          
-         
           _buildQuickStats(),
-          
           SizedBox(height: 24),
-          
-         
           _buildOrdersSection(),
-          
           SizedBox(height: 24),
-          
-         
           _buildAppointmentsSection(),
-          
           SizedBox(height: 24),
-          
-         
           _buildLoyaltySection(),
         ],
       ),
@@ -158,16 +145,12 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
         padding: EdgeInsets.all(20),
         child: Row(
           children: [
-           
             CircleAvatar(
               radius: 30,
               backgroundColor: Colors.orange.shade100,
               child: Icon(Icons.person, size: 30, color: Colors.orange),
             ),
-            
             SizedBox(width: 16),
-            
-           
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,8 +189,6 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
                 ],
               ),
             ),
-            
-            // Logout button
             IconButton(
               onPressed: _showLogoutDialog,
               icon: Icon(
@@ -256,7 +237,8 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
     return Card(
       elevation: 2,
       child: Padding(
@@ -316,7 +298,8 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
                     ),
                   ),
                   Spacer(),
-                  Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 16),
+                  Icon(Icons.arrow_forward_ios,
+                      color: Colors.grey[400], size: 16),
                 ],
               ),
               SizedBox(height: 12),
@@ -383,7 +366,8 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
                     ),
                   ),
                   Spacer(),
-                  Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 16),
+                  Icon(Icons.arrow_forward_ios,
+                      color: Colors.grey[400], size: 16),
                 ],
               ),
               SizedBox(height: 12),
@@ -416,7 +400,7 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
 
   Widget _buildLoyaltySection() {
     final nextTierInfo = _userAccount!.getNextTierInfo();
-    
+
     return Card(
       elevation: 2,
       child: Padding(
@@ -446,18 +430,19 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
                     children: [
                       Text(
                         'Current Tier: ${_userAccount!.loyaltyTier}',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                        style: TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w600),
                       ),
                       SizedBox(height: 4),
-                                  Text(
-              'Points: ${_userAccount!.loyaltyPoints}',
-              style: TextStyle(fontSize: 14),
-            ),
-            SizedBox(height: 4),
-            Text(
-              'Discount: ${_userAccount!.loyaltyDiscount.toStringAsFixed(1)}%',
-              style: TextStyle(fontSize: 14, color: Colors.green),
-            ),
+                      Text(
+                        'Points: ${_userAccount!.loyaltyPoints}',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Discount: ${_userAccount!.loyaltyDiscount.toStringAsFixed(1)}%',
+                        style: TextStyle(fontSize: 14, color: Colors.green),
+                      ),
                     ],
                   ),
                 ),
@@ -486,7 +471,9 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
               ),
               SizedBox(height: 4),
               LinearProgressIndicator(
-                value: _userAccount!.loyaltyPoints / (nextTierInfo['pointsNeeded'] + _userAccount!.loyaltyPoints),
+                value: _userAccount!.loyaltyPoints /
+                    (nextTierInfo['pointsNeeded'] +
+                        _userAccount!.loyaltyPoints),
                 backgroundColor: Colors.grey[300],
                 valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
               ),
@@ -505,33 +492,33 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
               SizedBox(height: 8),
               ..._loyaltyBonuses
                   .where((bonus) => bonus.isAvailable)
-                  .take(3) 
+                  .take(3)
                   .map((bonus) => Padding(
-                    padding: EdgeInsets.only(bottom: 4),
-                    child: Row(
-                      children: [
-                        Icon(Icons.card_giftcard, size: 16, color: Colors.orange),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            bonus.description,
-                            style: TextStyle(fontSize: 12),
-                          ),
-                        ),
-                        if (bonus.bonusValue > 0)
-                          Text(
-                            '${bonus.bonusValue.toStringAsFixed(0)}%',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.orange.shade700,
+                        padding: EdgeInsets.only(bottom: 4),
+                        child: Row(
+                          children: [
+                            Icon(Icons.card_giftcard,
+                                size: 16, color: Colors.orange),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                bonus.description,
+                                style: TextStyle(fontSize: 12),
+                              ),
                             ),
-                          ),
-                      ],
-                    ),
-                  )),
+                            if (bonus.bonusValue > 0)
+                              Text(
+                                '${bonus.bonusValue.toStringAsFixed(0)}%',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.orange.shade700,
+                                ),
+                              ),
+                          ],
+                        ),
+                      )),
             ],
-
           ],
         ),
       ),
@@ -581,10 +568,8 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
 
   void _performLogout() async {
     try {
-      // Close the dialog
       Navigator.of(context).pop();
-      
-      // Show loading indicator
+
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -595,39 +580,25 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
         },
       );
 
-      // Call backend logout API
-      final logoutResult = await _userAccountProvider.logout(widget.userId);
-      
-      // Close loading dialog
+      await _userAccountProvider.logout(widget.userId);
+
       Navigator.of(context).pop();
-      
-      if (logoutResult == true) {
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Successfully logged out'),
-            backgroundColor: Colors.green[600],
-            duration: Duration(seconds: 2),
-          ),
-        );
-        
-        // Clear local user data (if any)
-        // You might want to clear stored tokens, user preferences, etc.
-        
-        // Navigate back to login screen or main screen
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          '/', // Replace with your actual login route
-          (route) => false, // This removes all previous routes
-        );
-      } else {
-        throw Exception('Logout failed on server');
-      }
-      
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Successfully logged out'),
+          backgroundColor: Colors.green[600],
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => MyHomePage()),
+        (route) => false,
+      );
     } catch (e) {
-      // Close loading dialog
       Navigator.of(context).pop();
-      
-      // Show error message
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error during logout: $e'),
@@ -660,17 +631,19 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                   SizedBox(height: 8),
-                  ...(tierInfo['tierBenefits']['benefits'] as List<dynamic>? ?? [])
+                  ...(tierInfo['tierBenefits']['benefits'] as List<dynamic>? ??
+                          [])
                       .map((benefit) => Padding(
-                        padding: EdgeInsets.only(bottom: 4),
-                        child: Row(
-                          children: [
-                            Icon(Icons.check_circle, size: 16, color: Colors.green),
-                            SizedBox(width: 8),
-                            Expanded(child: Text(benefit.toString())),
-                          ],
-                        ),
-                      )),
+                            padding: EdgeInsets.only(bottom: 4),
+                            child: Row(
+                              children: [
+                                Icon(Icons.check_circle,
+                                    size: 16, color: Colors.green),
+                                SizedBox(width: 8),
+                                Expanded(child: Text(benefit.toString())),
+                              ],
+                            ),
+                          )),
                 ],
                 SizedBox(height: 12),
                 if (tierInfo['nextTierInfo']['pointsNeeded'] > 0) ...[
@@ -679,14 +652,15 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                   SizedBox(height: 8),
-                  Text('Points needed: ${tierInfo['nextTierInfo']['pointsNeeded']}'),
+                  Text(
+                      'Points needed: ${tierInfo['nextTierInfo']['pointsNeeded']}'),
                   SizedBox(height: 8),
                   Text('Benefits:'),
                   ...(tierInfo['nextTierInfo']['benefits'] as List<dynamic>)
                       .map((benefit) => Padding(
-                        padding: EdgeInsets.only(bottom: 4, left: 16),
-                        child: Text('• $benefit'),
-                      )),
+                            padding: EdgeInsets.only(bottom: 4, left: 16),
+                            child: Text('• $benefit'),
+                          )),
                 ],
               ],
             ),
@@ -701,6 +675,4 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
       },
     );
   }
-
-
 }

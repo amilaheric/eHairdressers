@@ -16,6 +16,9 @@ class BaseProvider<T> with ChangeNotifier {
         defaultValue: "http://localhost:7051/");
   }
 
+  String get baseUrl => _baseUrl ??
+      const String.fromEnvironment("baseUrl", defaultValue: "http://localhost:7051/");
+
   Future<SearchResult<T>> get({dynamic filter}) async {
     try {
       var url = "$_baseUrl$endpoint";
@@ -155,14 +158,11 @@ class BaseProvider<T> with ChangeNotifier {
   }
 
   Map<String, String> createHeaders() {
-    String username = Authorization.username ?? "";
-    String password = Authorization.password ?? "";
-    String basicAuth =
-        "Basic ${base64Encode(utf8.encode('$username:$password'))}";
+    String token = Authorization.token ?? "";
 
     var headers = {
       "Content-Type": "application/json",
-      "Authorization": basicAuth
+      "Authorization": "Bearer $token"
     };
 
     return headers;

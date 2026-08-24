@@ -1,5 +1,6 @@
 using eHairdressers.Model;
 using eHairdressers.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -9,6 +10,7 @@ namespace eHairdressers.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class RecommendationController : ControllerBase
     {
         private readonly IRecommendationService _recommendationService;

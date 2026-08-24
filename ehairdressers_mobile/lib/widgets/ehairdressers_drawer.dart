@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:ehairdressers_mobile/main.dart';
+import 'package:ehairdressers_mobile/providers/user_account_provider.dart';
 import 'package:ehairdressers_mobile/screens/product_list_screen.dart';
 import 'package:ehairdressers_mobile/screens/cart_screen.dart';
 import 'package:ehairdressers_mobile/screens/appointment_screen.dart';
@@ -221,14 +224,18 @@ class EHairdressersDrawer extends StatelessWidget {
               'Logout',
               style: TextStyle(color: Colors.red[600]),
             ),
-            onTap: () {
-                  
+            onTap: () async {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Logout functionality coming soon!'),
-                  backgroundColor: Colors.red,
-                ),
+
+              // Asks the server to revoke this token (jti) and always
+              // clears the local session too, even if the server call
+              // fails - see UserAccountProvider.logout.
+              final userAccountProvider = context.read<UserAccountProvider>();
+              await userAccountProvider.logout(userId);
+
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => MyHomePage()),
+                (route) => false,
               );
             },
           ),

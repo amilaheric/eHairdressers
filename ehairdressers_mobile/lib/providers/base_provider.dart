@@ -28,6 +28,9 @@ abstract class BaseProvider<T> with ChangeNotifier {
     http = IOClient(client);
   }
 
+  String get baseUrl =>
+      _baseUrl ?? const String.fromEnvironment("baseUrl", defaultValue: "http://10.0.2.2:7051/");
+
   Future<List<T>> getById(int id, [dynamic additionalData]) async {
     var url = Uri.parse("$_baseUrl$_endpoint/$id");
 
@@ -213,24 +216,17 @@ abstract class BaseProvider<T> with ChangeNotifier {
   }
 
   Map<String, String> createHeaders() {
-    String? username = Authorization.username;
-    String? password = Authorization.password;
+    String? token = Authorization.token;
 
-    if (username == null || password == null) {
+    if (token == null || token.isEmpty) {
       throw Exception("Authorization credentials not set. Please log in first.");
     }
 
-    String basicAuth =
-        "Basic ${base64Encode(utf8.encode('$username:$password'))}";
-
     var headers = {
       "Content-Type": "application/json",
-      "Authorization": basicAuth
+      "Authorization": "Bearer $token"
     };
-    
-    print('DEBUG: Creating headers for user: $username');
-    print('DEBUG: Authorization header: $basicAuth');
-    
+
     return headers;
   }
 

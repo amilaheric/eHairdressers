@@ -25,19 +25,15 @@ class CartProvider with ChangeNotifier {
   }
 
   Map<String, String> createHeaders() {
-    String? username = Authorization.username;
-    String? password = Authorization.password;
+    String? token = Authorization.token;
 
-    if (username == null || password == null) {
+    if (token == null || token.isEmpty) {
       throw Exception("Authorization credentials not set. Please log in first.");
     }
 
-    String basicAuth =
-        "Basic ${base64Encode(utf8.encode('$username:$password'))}";
-
     var headers = {
       "Content-Type": "application/json",
-      "Authorization": basicAuth
+      "Authorization": "Bearer $token"
     };
     return headers;
   }

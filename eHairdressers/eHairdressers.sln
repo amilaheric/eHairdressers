@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "eHairdressers.Model", "eHai
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "eHairdressers.Services", "eHairdressers.Services\eHairdressers.Services.csproj", "{FDDB5893-A38D-444D-A309-CB9EE1768C0C}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "eHairdressers.Worker", "eHairdressers.Worker\eHairdressers.Worker.csproj", "{6D4F8B21-9C3E-4A7D-B2F1-3E5C7A9D1B2F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{FDDB5893-A38D-444D-A309-CB9EE1768C0C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FDDB5893-A38D-444D-A309-CB9EE1768C0C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FDDB5893-A38D-444D-A309-CB9EE1768C0C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6D4F8B21-9C3E-4A7D-B2F1-3E5C7A9D1B2F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D4F8B21-9C3E-4A7D-B2F1-3E5C7A9D1B2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6D4F8B21-9C3E-4A7D-B2F1-3E5C7A9D1B2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6D4F8B21-9C3E-4A7D-B2F1-3E5C7A9D1B2F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

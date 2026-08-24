@@ -4,11 +4,26 @@ import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 
 class Authorization {
+  // JWT bearer token returned by POST /User/login. Sent as
+  // "Authorization: Bearer {token}" on every request (see base_provider.dart).
+  // Raw username/password are never stored or resent after login.
+  static String? token;
   static String? username;
-  static String? password;
   static int currentUserId = 1;
   static String? userRole;
+  static List<String> roles = [];
   static String? userEmail;
+
+  static bool get isLoggedIn => token != null && token!.isNotEmpty;
+
+  static void clear() {
+    token = null;
+    username = null;
+    currentUserId = 1;
+    userRole = null;
+    roles = [];
+    userEmail = null;
+  }
 }
 
 class StripeConfig {

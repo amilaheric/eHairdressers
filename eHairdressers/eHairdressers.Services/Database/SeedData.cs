@@ -242,10 +242,37 @@ namespace eHairdressers.Services.Database
                 users.Add(user);
             }
 
+            var testAccountData = new[]
+            {
+                new { Name = "desktop", Surname = "test", Username = "desktop", Email = "desktop@ehairdressers.local", CitizenshipNumber = "100000001", Phone = "+38760000001", BirthDate = "1990-01-01" },
+                new { Name = "mobile", Surname = "test", Username = "mobile", Email = "mobile@ehairdressers.local", CitizenshipNumber = "100000002", Phone = "+38760000002", BirthDate = "1990-01-01" },
+                new { Name = "employee", Surname = "test", Username = "employee", Email = "employee@ehairdressers.local", CitizenshipNumber = "100000003", Phone = "+38760000003", BirthDate = "1990-01-01" },
+            };
+            const string testAccountPassword = "test";
+
+            foreach (var accountInfo in testAccountData)
+            {
+                var passwordSalt = eHairdressers.Services.UserService.GenerateSalt();
+                var passwordHash = eHairdressers.Services.UserService.GenerateHash(passwordSalt, testAccountPassword);
+
+                users.Add(new User
+                {
+                    Name = accountInfo.Name,
+                    Surname = accountInfo.Surname,
+                    Username = accountInfo.Username,
+                    Email = accountInfo.Email,
+                    CitizenshipNumber = accountInfo.CitizenshipNumber,
+                    Phone = accountInfo.Phone,
+                    BirthDate = accountInfo.BirthDate,
+                    PasswordHash = passwordHash,
+                    PasswordSalt = passwordSalt
+                });
+            }
+
             context.User.AddRange(users);
             await context.SaveChangesAsync();
 
-            
+
         }
 
         public static async Task SeedEmployees(eHairdressersContext context)
@@ -259,14 +286,27 @@ namespace eHairdressers.Services.Database
             var employees = new List<Employees>
             {
                 new Employees { UserId = users.First(u => u.Username == "emina").UserId, Name = "emina", Surname = "heric", CitizenshipNumber = "987654321", Phone = "+0987654321", HireDate = new DateTime(2020, 1, 15), BirthDate = "1990-01-01", Address = "Sarajevo, BiH", Salary = 1500 },
-                new Employees { UserId = users.First(u => u.Username == "ermina").UserId, Name = "ermina", Surname = "music", CitizenshipNumber = "456789123", Phone = "+4567891230", HireDate = new DateTime(2021, 7, 8), BirthDate = "1988-12-10", Address = "Sarajevo, BiH", Salary = 1450 }
+                new Employees { UserId = users.First(u => u.Username == "ermina").UserId, Name = "ermina", Surname = "music", CitizenshipNumber = "456789123", Phone = "+4567891230", HireDate = new DateTime(2021, 7, 8), BirthDate = "1988-12-10", Address = "Sarajevo, BiH", Salary = 1450 },
+                new Employees { UserId = users.First(u => u.Username == "employee").UserId, Name = "employee", Surname = "test", CitizenshipNumber = "100000003", Phone = "+38760000003", HireDate = new DateTime(2022, 1, 1), BirthDate = "1990-01-01", Address = "Sarajevo, BiH", Salary = 1400 }
             };
 
             context.Employees.AddRange(employees);
             await context.SaveChangesAsync();
 
-            
+
             await PopulateUserRolesBasedOnEmployees(context);
+
+            var desktopUser = users.FirstOrDefault(u => u.Username == "desktop");
+            if (desktopUser != null)
+            {
+                await AssignDefaultRoleToUser(context, desktopUser.UserId, "Admin");
+            }
+
+            var amilaUser = users.FirstOrDefault(u => u.Username == "amila");
+            if (amilaUser != null)
+            {
+                await AssignDefaultRoleToUser(context, amilaUser.UserId, "Admin");
+            }
         }
 
         public static async Task PopulateUserRolesBasedOnEmployees(eHairdressersContext context)

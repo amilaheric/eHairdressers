@@ -1,12 +1,15 @@
 using eHairdressers.Model;
 using eHairdressers.Model.Requests;
 using eHairdressers.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace eHairdressers.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class UserAccountController : ControllerBase
     {
         private readonly IUserAccountService _userAccountService;
@@ -16,9 +19,29 @@ namespace eHairdressers.Controllers
             _userAccountService = userAccountService;
         }
 
+        // userId still arrives via the route for URL/API-contract compatibility,
+        // but it is no longer trusted blindly: a non-admin caller may only
+        // operate on their own account (userId must match the JWT's
+        // NameIdentifier claim). Admins may act on any user's data.
+        private bool IsSelfOrAdmin(int userId)
+        {
+            if (User.IsInRole("Admin"))
+            {
+                return true;
+            }
+
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return int.TryParse(currentUserId, out var id) && id == userId;
+        }
+
         [HttpGet("{userId}")]
         public async Task<IActionResult> GetUserProfile(int userId)
         {
+            if (!IsSelfOrAdmin(userId))
+            {
+                return Forbid();
+            }
+
             try
             {
                 var profile = await _userAccountService.GetUserProfile(userId);
@@ -37,6 +60,11 @@ namespace eHairdressers.Controllers
         [HttpGet("Stats/{userId}")]
         public async Task<IActionResult> GetUserStatistics(int userId)
         {
+            if (!IsSelfOrAdmin(userId))
+            {
+                return Forbid();
+            }
+
             try
             {
                 var statistics = await _userAccountService.GetUserStatistics(userId);
@@ -55,6 +83,11 @@ namespace eHairdressers.Controllers
         [HttpGet("LoyaltyBonuses/{userId}")]
         public async Task<IActionResult> GetLoyaltyBonuses(int userId)
         {
+            if (!IsSelfOrAdmin(userId))
+            {
+                return Forbid();
+            }
+
             try
             {
                 var bonuses = await _userAccountService.GetLoyaltyBonuses(userId);
@@ -73,6 +106,11 @@ namespace eHairdressers.Controllers
         [HttpPut("RedeemBonus/{bonusId}/{userId}")]
         public async Task<IActionResult> RedeemBonus(int bonusId, int userId)
         {
+            if (!IsSelfOrAdmin(userId))
+            {
+                return Forbid();
+            }
+
             try
             {
                 var result = await _userAccountService.RedeemBonus(bonusId, userId);
@@ -118,6 +156,11 @@ namespace eHairdressers.Controllers
         [HttpGet("LoyaltyDiscount/{userId}")]
         public async Task<IActionResult> GetLoyaltyDiscount(int userId)
         {
+            if (!IsSelfOrAdmin(userId))
+            {
+                return Forbid();
+            }
+
             try
             {
                 var discount = await _userAccountService.CalculateLoyaltyDiscount(userId);

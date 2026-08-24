@@ -69,6 +69,12 @@ class Login extends StatelessWidget {
   TextEditingController _usernameController = new TextEditingController();
   TextEditingController _passwordController = new TextEditingController();
 
+  static String get _baseUrl {
+    const String baseUrl =
+        String.fromEnvironment("baseUrl", defaultValue: "http://localhost:7051/");
+    return baseUrl.endsWith("/") ? baseUrl : "$baseUrl/";
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -117,31 +123,45 @@ class Login extends StatelessWidget {
                           var username = _usernameController.text;
                           var password = _passwordController.text;
 
-                          Authorization.username = username;
-                          Authorization.password = password;
-                          
                           try {
-                            // Test authentication by trying to fetch appointment data
-                            // This should be accessible to employee users
-                            var url = "http://localhost:7051/Appointment"; // Changed to Appointment
-                            var uri = Uri.parse(url);
+                            // Authenticate against the real login endpoint -
+                            // it both verifies the password and issues the
+                            // JWT used for every subsequent request.
+                            var uri = Uri.parse("${_baseUrl}User/login");
+                            var response = await http.post(
+                              uri,
+                              headers: {"Content-Type": "application/json"},
+                              body: jsonEncode({
+                                "Username": username,
+                                "Password": password,
+                              }),
+                            );
 
-                            // Create Basic Auth headers
-                            var credentials = base64Encode(utf8.encode('$username:$password'));
-                            var headers = {
-                              'Authorization': 'Basic $credentials',
-                              'Content-Type': 'application/json',
-                            };
-
-                            var response = await http.get(uri, headers: headers);
-
-                            if (response.statusCode == 200) {
-                              Navigator.of(context).push(MaterialPageRoute(
-                                  builder: (context) => ProductInsert()));
-                            } else {
-                              throw Exception("Authentication failed: ${response.statusCode}");
+                            if (response.statusCode != 200) {
+                              throw Exception("Incorrect username or password");
                             }
+
+                            var data = jsonDecode(response.body);
+
+                            Authorization.token = data["Token"] ?? data["token"];
+                            Authorization.username =
+                                data["Username"] ?? data["username"] ?? username;
+                            Authorization.currentUserId =
+                                data["UserId"] ?? data["userId"] ?? 1;
+
+                            var roles = (data["Roles"] ?? data["roles"] ?? [])
+                                .cast<String>();
+                            Authorization.roles = List<String>.from(roles);
+                            Authorization.userRole = roles.contains("Admin")
+                                ? "Admin"
+                                : (roles.contains("Employee")
+                                    ? "Employee"
+                                    : "User");
+
+                            Navigator.of(context).push(MaterialPageRoute(
+                                builder: (context) => ProductInsert()));
                           } on Exception catch (e) {
+                            Authorization.clear();
                             showDialog(
                                 context: context,
                                 builder: (BuildContext context) => AlertDialog(
