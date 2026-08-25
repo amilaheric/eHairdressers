@@ -75,7 +75,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
         employeeId: widget.employeeId,
         rating: _rating.toInt(),
         comment: _commentController.text.trim().isEmpty ? null : _commentController.text.trim(),
-        reviewDate: DateTime.now().toIso8601String(),
+        reviewDate: DateTime.now().toUtc().toIso8601String(),
         isActive: true,
       );
 

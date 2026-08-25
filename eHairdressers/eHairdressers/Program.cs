@@ -1,6 +1,7 @@
 using eHairdressers;
 using eHairdressers.Auth;
 using eHairdressers.Filters;
+using eHairdressers.Json;
 using eHairdressers.Model.SearchObjects;
 using eHairdressers.Services;
 using eHairdressers.Services.Database;
@@ -22,6 +23,14 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNamingPolicy = null;
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         options.JsonSerializerOptions.MaxDepth = 32;
+        // All DateTime values in this app are written using DateTime.UtcNow,
+        // but EF Core always reads datetime2 columns back with Kind=Unspecified,
+        // which System.Text.Json would otherwise serialize with no timezone
+        // marker at all - clients then parse it as if it were their own local
+        // time, showing the wrong hour. Force every DateTime on the wire to be
+        // treated/serialized as UTC ("...Z") so clients can safely .toLocal() it.
+        options.JsonSerializerOptions.Converters.Add(new UtcDateTimeConverter());
+        options.JsonSerializerOptions.Converters.Add(new UtcNullableDateTimeConverter());
     });
 
 builder.Services.AddSignalR();

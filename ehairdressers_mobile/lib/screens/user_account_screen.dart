@@ -378,7 +378,7 @@ class _UserAccountScreenState extends State<UserAccountScreen> {
               if (_userAccount!.memberSince != null) ...[
                 SizedBox(height: 8),
                 Text(
-                  'Member since: ${DateFormat('MMM yyyy').format(DateTime.parse(_userAccount!.memberSince!))}',
+                  'Member since: ${DateFormat('MMM yyyy').format(DateTime.parse(_userAccount!.memberSince!).toLocal())}',
                   style: TextStyle(fontSize: 14),
                 ),
               ],

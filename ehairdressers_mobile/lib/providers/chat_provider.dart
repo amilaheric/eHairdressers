@@ -47,7 +47,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
               return ChatRoom(
                 chatRoomId: json['ChatRoomId'] ?? json['chatroomid'] ?? json['Id'] ?? json['id'],
                 name: json['Name'] ?? json['name'] ?? 'Chat Room',
-                createdDate: json['CreatedDate'] ?? json['createddate'] ?? DateTime.now().toIso8601String(),
+                createdDate: json['CreatedDate'] ?? json['createddate'] ?? DateTime.now().toUtc().toIso8601String(),
                 isActive: json['IsActive'] ?? json['isactive'] ?? true,
                 userId: json['UserId'] ?? json['userid'] ?? 1,
                 salonId: json['SalonId'] ?? json['salonid'] ?? 1,
@@ -64,7 +64,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
               return ChatRoom(
                 chatRoomId: json['ChatRoomId'] ?? json['chatroomid'] ?? json['Id'] ?? json['id'],
                 name: json['Name'] ?? json['name'] ?? 'Chat Room',
-                createdDate: json['CreatedDate'] ?? json['createddate'] ?? DateTime.now().toIso8601String(),
+                createdDate: json['CreatedDate'] ?? json['createddate'] ?? DateTime.now().toUtc().toIso8601String(),
                 isActive: json['IsActive'] ?? json['isactive'] ?? true,
                 userId: json['UserId'] ?? json['userid'] ?? 1,
                 salonId: json['SalonId'] ?? json['salonid'] ?? 1,
@@ -81,7 +81,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
               return ChatRoom(
                 chatRoomId: json['ChatRoomId'] ?? json['chatroomid'] ?? json['Id'] ?? json['id'],
                 name: json['Name'] ?? json['name'] ?? 'Chat Room',
-                createdDate: json['CreatedDate'] ?? json['createddate'] ?? DateTime.now().toIso8601String(),
+                createdDate: json['CreatedDate'] ?? json['createddate'] ?? DateTime.now().toUtc().toIso8601String(),
                 isActive: json['IsActive'] ?? json['isactive'] ?? true,
                 userId: json['UserId'] ?? json['userid'] ?? 1,
                 salonId: json['SalonId'] ?? json['salonid'] ?? 1,
@@ -137,7 +137,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
             return ChatRoom(
               chatRoomId: json['ChatRoomId'] ?? json['chatroomid'] ?? json['Id'] ?? json['id'],
               name: json['Name'] ?? json['name'] ?? 'Customer Support Chat',
-              createdDate: json['CreatedDate'] ?? json['createddate'] ?? DateTime.now().toIso8601String(),
+              createdDate: json['CreatedDate'] ?? json['createddate'] ?? DateTime.now().toUtc().toIso8601String(),
               isActive: json['IsActive'] ?? json['isactive'] ?? true,
               userId: json['UserId'] ?? json['userid'] ?? 1,
               salonId: json['SalonId'] ?? json['salonid'] ?? 1,
@@ -154,7 +154,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
             return ChatRoom(
               chatRoomId: json['ChatRoomId'] ?? json['chatroomid'] ?? json['Id'] ?? json['id'],
               name: json['Name'] ?? json['name'] ?? 'Customer Support Chat',
-              createdDate: json['CreatedDate'] ?? json['createddate'] ?? DateTime.now().toIso8601String(),
+              createdDate: json['CreatedDate'] ?? json['createddate'] ?? DateTime.now().toUtc().toIso8601String(),
               isActive: json['IsActive'] ?? json['isactive'] ?? true,
               userId: json['UserId'] ?? json['userid'] ?? 1,
               salonId: json['SalonId'] ?? json['salonid'] ?? 1,
@@ -171,7 +171,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
             return ChatRoom(
               chatRoomId: json['ChatRoomId'] ?? json['chatroomid'] ?? json['Id'] ?? json['id'],
               name: json['Name'] ?? json['name'] ?? 'Customer Support Chat',
-              createdDate: json['CreatedDate'] ?? json['createddate'] ?? DateTime.now().toIso8601String(),
+              createdDate: json['CreatedDate'] ?? json['createddate'] ?? DateTime.now().toUtc().toIso8601String(),
               isActive: json['IsActive'] ?? json['isactive'] ?? true,
               userId: json['UserId'] ?? json['userid'] ?? 1,
               salonId: json['SalonId'] ?? json['salonid'] ?? 1,
@@ -195,7 +195,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
       return ChatRoom(
         chatRoomId: 1,
         name: 'Customer Support Chat',
-        createdDate: DateTime.now().toIso8601String(),
+        createdDate: DateTime.now().toUtc().toIso8601String(),
         isActive: true,
         userId: 1,
         salonId: 1,
@@ -205,7 +205,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
       return ChatRoom(
         chatRoomId: 1,
         name: 'Customer Support Chat',
-        createdDate: DateTime.now().toIso8601String(),
+        createdDate: DateTime.now().toUtc().toIso8601String(),
         isActive: true,
         userId: 1,
         salonId: 1,
@@ -236,7 +236,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
                 senderId: json['SenderId'] ?? 0,
                 senderType: json['SenderType'] ?? 'User',
                 messageText: json['MessageText'] ?? json['Content'] ?? 'Error loading message',
-                messageDate: json['MessageDate'] ?? json['SentDate'] ?? DateTime.now().toIso8601String(),
+                messageDate: json['MessageDate'] ?? json['SentDate'] ?? DateTime.now().toUtc().toIso8601String(),
                 isRead: json['IsRead'] ?? false,
               );
             }
@@ -253,7 +253,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
                     senderId: json['SenderId'] ?? 0,
                     senderType: json['SenderType'] ?? 'User',
                     messageText: json['MessageText'] ?? json['Content'] ?? 'Error loading message',
-                    messageDate: json['MessageDate'] ?? json['SentDate'] ?? DateTime.now().toIso8601String(),
+                    messageDate: json['MessageDate'] ?? json['SentDate'] ?? DateTime.now().toUtc().toIso8601String(),
                     isRead: json['IsRead'] ?? false,
                   );
                 }
@@ -386,7 +386,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
       var requestBody = {
         'chatroomid': chatRoomId,
         'userid': userId,
-        'joineddate': DateTime.now().toIso8601String(),
+        'joineddate': DateTime.now().toUtc().toIso8601String(),
         'isactive': true,
       };
       

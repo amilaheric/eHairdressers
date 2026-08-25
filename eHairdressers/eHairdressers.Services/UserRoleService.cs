@@ -65,7 +65,7 @@ namespace eHairdressers.Services
                 {
                     UserId = userId,
                     RoleId = role.RoleId,
-                    DateChange = DateTime.Now
+                    DateChange = DateTime.UtcNow
                 };
 
                 _context.UserRole.Add(userRole);

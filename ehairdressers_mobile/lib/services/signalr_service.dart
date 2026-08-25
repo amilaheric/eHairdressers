@@ -89,7 +89,7 @@ class SignalRService {
               senderId: _parseInt(messageData['senderId'] ?? messageData['SenderId']),
               senderType: (messageData['senderType'] ?? messageData['SenderType'] ?? 'User').toString(),
               messageText: (messageData['content'] ?? messageData['Content'] ?? messageData['messageText'] ?? messageData['MessageText'] ?? '').toString(),
-              messageDate: (messageData['sentDate'] ?? messageData['SentDate'] ?? messageData['messageDate'] ?? messageData['MessageDate'] ?? DateTime.now().toIso8601String()).toString(),
+              messageDate: (messageData['sentDate'] ?? messageData['SentDate'] ?? messageData['messageDate'] ?? messageData['MessageDate'] ?? DateTime.now().toUtc().toIso8601String()).toString(),
               isRead: _parseBool(messageData['isRead'] ?? messageData['IsRead']),
               isActive: _parseBool(messageData['isActive'] ?? messageData['IsActive'] ?? true),
             );
@@ -108,7 +108,7 @@ class SignalRService {
                 senderId: _parseInt(messageData['senderId'] ?? messageData['SenderId'] ?? 1),
                 senderType: (messageData['senderType'] ?? messageData['SenderType'] ?? 'User').toString(),
                 messageText: (messageData['content'] ?? messageData['Content'] ?? messageData['messageText'] ?? messageData['MessageText'] ?? 'Message received').toString(),
-                messageDate: DateTime.now().toIso8601String(),
+                messageDate: DateTime.now().toUtc().toIso8601String(),
                 isRead: false,
                 isActive: true,
               );

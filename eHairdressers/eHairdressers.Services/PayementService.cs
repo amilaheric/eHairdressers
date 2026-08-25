@@ -90,7 +90,7 @@ namespace eHairdressers.Services
                 paymentEntity = new Database.Payment
                 {
                     OrderId = orderId,
-                    PaymentDate = DateTime.Now,
+                    PaymentDate = DateTime.UtcNow,
                     Amount = paymentIntent.Amount / 100m,
                     PaymentMethod = "Stripe",
                     PaymentStatus = paymentStatus,
@@ -130,7 +130,7 @@ namespace eHairdressers.Services
             }
 
            
-            entity.PaymentDate = DateTime.Now;
+            entity.PaymentDate = DateTime.UtcNow;
             
            
             entity.PaymentStatus = "Pending";

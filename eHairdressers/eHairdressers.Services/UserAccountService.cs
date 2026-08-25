@@ -41,7 +41,7 @@ namespace eHairdressers.Services
                 Email = user.Email ?? "",
                 Phone = user.Phone ?? "",
                 Username = user.Username,
-                RegistrationDate = DateTime.Now,
+                RegistrationDate = DateTime.UtcNow,
                 LastLoginDate = null,
                 IsActive = user.Status ?? true,
                 TotalAppointments = appointments.Count,
@@ -93,7 +93,7 @@ namespace eHairdressers.Services
         public async Task<List<LoyaltyBonus>> GetLoyaltyBonuses(int userId)
         {
             var (_, loyaltyPoints, _, _) = await GetUserMetrics(userId);
-            var currentDate = DateTime.Now;
+            var currentDate = DateTime.UtcNow;
             var bonuses = new List<LoyaltyBonus>();
 
             if (loyaltyPoints >= 100)

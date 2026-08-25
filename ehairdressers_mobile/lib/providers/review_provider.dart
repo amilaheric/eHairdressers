@@ -188,7 +188,7 @@ class ReviewProvider extends BaseProvider<Review> {
           employeeId: request.employeeId,
           rating: request.rating,
           comment: request.comment,
-          reviewDate: DateTime.now().toIso8601String(),
+          reviewDate: DateTime.now().toUtc().toIso8601String(),
         );
         
         var result = await insert(review);

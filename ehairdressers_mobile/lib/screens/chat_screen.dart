@@ -250,7 +250,7 @@ class _ChatScreenState extends State<ChatScreen> {
           senderId: Authorization.currentUserId,
           senderType: senderType,
           messageText: messageText,
-          messageDate: DateTime.now().toIso8601String(),
+          messageDate: DateTime.now().toUtc().toIso8601String(),
           isRead: false,
         );
         
@@ -283,10 +283,15 @@ class _ChatScreenState extends State<ChatScreen> {
     int actualUserId = Authorization.currentUserId;
     bool isUserMessage = message.senderId == actualUserId;
     
-    bool isCustomerMessage = message.senderType == 'User' || message.senderType == null;
+    bool isCustomerMessage = message.senderType == 'User' ||
+        message.senderType == 'Customer' ||
+        message.senderType == null;
     bool isEmployeeMessage = message.senderType == 'Admin' || message.senderType == 'Employee';
-    
-    var messageDate = DateTime.tryParse(message.messageDate);
+
+    // Backend sends message dates as UTC ("...Z"); convert to local before
+    // formatting, otherwise the timestamp shown under each bubble is off by
+    // the device's UTC offset.
+    var messageDate = DateTime.tryParse(message.messageDate)?.toLocal();
     
     return Align(
       alignment: isUserMessage ? Alignment.centerRight : Alignment.centerLeft,

@@ -161,7 +161,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
         salonId: 1,
         roomName: roomName,
         name: roomName,
-        createdDate: DateTime.now().toIso8601String(),
+        createdDate: DateTime.now().toUtc().toIso8601String(),
         isActive: true,
       );
       
@@ -210,11 +210,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
   }
 
   Widget _buildChatRoomCard(ChatRoom chatRoom) {
-    var lastMessageDate = chatRoom.lastMessageDate != null 
-        ? DateTime.tryParse(chatRoom.lastMessageDate!) 
+    var lastMessageDate = chatRoom.lastMessageDate != null
+        ? DateTime.tryParse(chatRoom.lastMessageDate!)?.toLocal()
         : null;
-    var createdDate = chatRoom.createdDate != null 
-        ? DateTime.tryParse(chatRoom.createdDate!) 
+    var createdDate = chatRoom.createdDate != null
+        ? DateTime.tryParse(chatRoom.createdDate!)?.toLocal()
         : null;
     
     return Card(

@@ -78,21 +78,31 @@ class Orders {
   // Check if order is active
   bool get isActive => canceled != true && status != 'Completed';
   
-  // Get order date as DateTime
+  // Get order date as DateTime, converted from UTC (the wire format the
+  // backend always sends) to the device's local timezone for display.
   DateTime? get orderDateTime {
     try {
-      if (orderDate != null) return DateTime.parse(orderDate!);
-      if (date != null) return DateTime.parse(date!);
+      if (orderDate != null) return DateTime.parse(orderDate!).toLocal();
+      if (date != null) return DateTime.parse(date!).toLocal();
       return null;
     } catch (e) {
       return null;
     }
   }
-  
+
   // Format order date for display
   String get formattedOrderDate {
     final dateTime = orderDateTime;
     if (dateTime == null) return 'N/A';
     return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+  }
+
+  // Format order date and time for display
+  String get formattedOrderDateTime {
+    final dateTime = orderDateTime;
+    if (dateTime == null) return 'N/A';
+    final hour = dateTime.hour.toString().padLeft(2, '0');
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    return '${dateTime.day}/${dateTime.month}/${dateTime.year} $hour:$minute';
   }
 }

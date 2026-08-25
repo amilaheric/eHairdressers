@@ -237,7 +237,10 @@ class UserStats {
   // Get member duration in months
   int get memberDurationMonths {
     try {
-      final firstDate = DateTime.parse(firstAppointment);
+      // Backend timestamps are UTC ("...Z"); convert to local before pulling
+      // out year/month, otherwise this drifts by a month near month/year
+      // boundaries (comparing a UTC calendar date against a local one).
+      final firstDate = DateTime.parse(firstAppointment).toLocal();
       final now = DateTime.now();
       return ((now.year - firstDate.year) * 12) + (now.month - firstDate.month);
     } catch (e) {

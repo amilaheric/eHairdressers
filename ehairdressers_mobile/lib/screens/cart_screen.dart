@@ -27,6 +27,7 @@ class _CartScreenState extends State<CartScreen> {
   final OrderItemProvider _orderItemProvider = OrderItemProvider();
   Map<String, dynamic>? payementIntentData;
   double checkout = 0;
+  bool _isPlacingOrder = false;
 
   @override
   void initState() {
@@ -161,11 +162,19 @@ class _CartScreenState extends State<CartScreen> {
             width: double.infinity,
             height: 50,
             child: ElevatedButton(
-              onPressed: _cartProvider.cart.items.isEmpty ? null : _processOrder,
-              child: Text(
-                "Proceed to Payment",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
+              onPressed: (_cartProvider.cart.items.isEmpty || _isPlacingOrder)
+                  ? null
+                  : _processOrder,
+              child: _isPlacingOrder
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(
+                      "Proceed to Payment",
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Color.fromARGB(255, 247, 233, 211),
                 foregroundColor: Color(0xFF938F94),
@@ -193,12 +202,18 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Future<void> _processOrder() async {
-    if (_cartProvider.cart.items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Your cart is empty')),
-      );
+    if (_cartProvider.cart.items.isEmpty || _isPlacingOrder) {
+      if (_cartProvider.cart.items.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Your cart is empty')),
+        );
+      }
       return;
     }
+
+    setState(() {
+      _isPlacingOrder = true;
+    });
 
     try {
       print('=== PROCEEDING TO PAYMENT ===');
@@ -250,6 +265,12 @@ class _CartScreenState extends State<CartScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPlacingOrder = false;
+        });
+      }
     }
   }
 }

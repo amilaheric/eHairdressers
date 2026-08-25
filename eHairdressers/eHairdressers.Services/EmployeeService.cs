@@ -128,7 +128,7 @@ namespace eHairdressers.Services
                     UserId = 0, 
                     Name = request.Name,
                     Surname = request.Surname,
-                    HireDate = DateTime.Now,
+                    HireDate = DateTime.UtcNow,
                     BirthDate = request.BirthDate,
                     Address = request.Address,
                     CitizenshipNumber = request.CitizenshipNumber,
@@ -153,7 +153,7 @@ namespace eHairdressers.Services
                 {
                     UserId = user.UserId,
                     RoleId = employeeRole,
-                    DateChange = DateTime.Now
+                    DateChange = DateTime.UtcNow
                 };
 
                

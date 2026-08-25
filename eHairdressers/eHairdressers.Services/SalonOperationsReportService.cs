@@ -19,7 +19,7 @@ namespace eHairdressers.Services
             var report = new SalonOperationsReport
             {
                 ReportId = 1, 
-                ReportDate = DateTime.Now,
+                ReportDate = DateTime.UtcNow,
                 StartDate = request.StartDate,
                 EndDate = request.EndDate,
                 ReportPeriod = request.ReportPeriod

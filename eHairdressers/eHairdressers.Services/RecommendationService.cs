@@ -146,7 +146,7 @@ namespace eHairdressers.Services
                         UserId = userId,
                         SimilarUserId = otherUserId,
                         SimilarityScore = similarity,
-                        CalculatedDate = DateTime.Now
+                        CalculatedDate = DateTime.UtcNow
                     });
                 }
             }

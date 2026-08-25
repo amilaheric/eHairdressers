@@ -3,10 +3,8 @@ import 'package:flutter/material.dart' as material;
 import 'package:flutter/services.dart';
 import 'package:ehairdressers_mobile/models/payment.dart' as models;
 import 'package:ehairdressers_mobile/models/order.dart';
-import 'package:ehairdressers_mobile/models/order_item.dart';
 import 'package:ehairdressers_mobile/models/cart.dart';
 import 'package:ehairdressers_mobile/providers/payment_provider.dart';
-import 'package:ehairdressers_mobile/providers/order_item_provider.dart';
 import 'package:ehairdressers_mobile/providers/cart_provider.dart';
 import 'package:ehairdressers_mobile/screens/order_detail_screen.dart';
 import 'package:ehairdressers_mobile/widgets/master_screen.dart';
@@ -137,8 +135,27 @@ class _PaymentScreenState extends State<PaymentScreen> {
     }
   }
 
+  // The backend always sends timestamps in UTC ("...Z"); convert to the
+  // device's local time before showing it, otherwise the payment looks like
+  // it happened at the wrong hour.
+  String _formatLocalTimestamp(String isoTimestamp) {
+    try {
+      final local = DateTime.parse(isoTimestamp).toLocal();
+      final hour = local.hour.toString().padLeft(2, '0');
+      final minute = local.minute.toString().padLeft(2, '0');
+      return '${local.day}/${local.month}/${local.year} $hour:$minute';
+    } catch (e) {
+      return isoTimestamp;
+    }
+  }
+
   void _showSuccessDialog(models.PaymentResponse response) async {
-    await _createOrderItems();
+    // The order's OrderItems were already created server-side, in
+    // OrdersService.AfterInsert, from the OrderItems array sent when the
+    // order itself was created (see CartProvider.proceedToPayment). Creating
+    // them again here duplicated every line item (and inflated the order
+    // total) each time a payment succeeded - just clear the cart now.
+    context.read<CartProvider>().clearCart();
 
     showDialog(
       context: context,
@@ -160,7 +177,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               Text('Amount: \$${response.amount.toStringAsFixed(2)}'),
               Text('Transaction ID: ${response.transactionId}'),
               Text('Status: ${response.status}'),
-              Text('Payment Date: ${response.timestamp}'),
+              Text('Payment Date: ${_formatLocalTimestamp(response.timestamp)}'),
               SizedBox(height: 10),
               Text('Thank you for your purchase!',
                   style: TextStyle(fontWeight: FontWeight.bold)),
@@ -197,30 +214,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
         );
       },
     );
-  }
-
-  Future<void> _createOrderItems() async {
-    try {
-      final orderItemProvider = OrderItemProvider();
-
-      for (var item in widget.cartItems) {
-        final orderItem = OrderItem()
-          ..orderId = widget.orderId
-          ..productId = item.product.id
-          ..quantity = item.count
-          ..price = item.product.price
-          ..amount = item.count
-          ..total = (item.product.price ?? 0) * item.count;
-
-        await orderItemProvider.insert(orderItem);
-      }
-
-      final cartProvider = context.read<CartProvider>();
-      cartProvider.clearCart();
-    } catch (e) {
-      print('Error creating order items: $e');
-      print('This is likely due to missing backend endpoint for OrderItems');
-    }
   }
 
   void _showErrorDialog(String message) {

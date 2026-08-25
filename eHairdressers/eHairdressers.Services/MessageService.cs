@@ -106,7 +106,7 @@ namespace eHairdressers.Services
                 {
                     ChatRoomId = insert.ChatRoomId,
                     UserId = insert.SenderId,
-                    JoinedDate = DateTime.Now,
+                    JoinedDate = DateTime.UtcNow,
                     IsActive = true
                 };
                 
@@ -119,7 +119,7 @@ namespace eHairdressers.Services
                 ChatRoomId = insert.ChatRoomId,
                 SenderId = insert.SenderId,
                 Content = insert.Content,
-                SentDate = DateTime.Now,
+                SentDate = DateTime.UtcNow,
                 IsRead = false,
                 SenderType = insert.SenderType ?? primaryRole
             };

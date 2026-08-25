@@ -402,7 +402,7 @@ namespace eHairdressers.Services.Database
             // calendar date) so that reports which default to a recent
             // window (e.g. "last 30 days") always have seeded data to show,
             // no matter when the database is first created.
-            var today = DateTime.Today;
+            var today = DateTime.UtcNow.Date;
             var appointments = new List<Appointment>
             {
                 new Appointment { UserId = users[0].UserId, EmployeeId = employees[0].EmployeeId, ServiceId = service.ServiceId, AppointmentDate = today.AddDays(-25), AppointmentTime = new TimeSpan(9, 0, 0), Status = "Scheduled", Comment = "First time visit" },
@@ -430,7 +430,7 @@ namespace eHairdressers.Services.Database
                 // calendar date) so that reports which default to a recent
                 // window (e.g. "last 30 days") always have seeded data to
                 // show, no matter when the database is first created.
-                var today = DateTime.Now.Date;
+                var today = DateTime.UtcNow.Date;
                 var orders = new List<Orders>
                 {
                     new Orders { UserId = users[0].UserId, OrderNumber = "ORD-001", TotalPrice = 280.0, OrderDate = today.AddDays(-3).Add(new TimeSpan(14, 30, 0)), Status = true },
@@ -542,7 +542,7 @@ namespace eHairdressers.Services.Database
                 if (existingUserRole.RoleId != role.RoleId)
                 {
                     existingUserRole.RoleId = role.RoleId;
-                    existingUserRole.DateChange = DateTime.Now;
+                    existingUserRole.DateChange = DateTime.UtcNow;
                     await context.SaveChangesAsync();
                 }
             }
@@ -553,7 +553,7 @@ namespace eHairdressers.Services.Database
                 {
                     UserId = userId,
                     RoleId = role.RoleId,
-                    DateChange = DateTime.Now
+                    DateChange = DateTime.UtcNow
                 };
 
                 context.UserRole.Add(userRole);

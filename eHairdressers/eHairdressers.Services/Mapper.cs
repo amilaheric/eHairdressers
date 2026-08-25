@@ -47,16 +47,22 @@ namespace eHairdressers.Services
 
                 .ForMember(dest => dest.OrderItems, opt => opt.Ignore());
             CreateMap<Model.Requests.OrdersInsertRequest, Database.Orders>()
-                .ForMember(dest => dest.OrderDate, opt => opt.MapFrom(src => src.Date ?? DateTime.Now))
+                .ForMember(dest => dest.OrderDate, opt => opt.MapFrom(src => src.Date ?? DateTime.UtcNow))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
-                .ForMember(dest => dest.OrderNumber, opt => opt.MapFrom(src => src.OrderNumber ?? $"ORD-{DateTime.Now.Ticks}"))
-                .ForMember(dest => dest.UserId, opt => opt.Ignore()) 
-                .ForMember(dest => dest.TotalPrice, opt => opt.Ignore());
+                .ForMember(dest => dest.OrderNumber, opt => opt.MapFrom(src => src.OrderNumber ?? $"ORD-{DateTime.UtcNow.Ticks}"))
+                .ForMember(dest => dest.UserId, opt => opt.Ignore())
+                .ForMember(dest => dest.TotalPrice, opt => opt.Ignore())
+                // Without this, AutoMapper also auto-maps insert.OrderItems onto
+                // entity.OrderItems (same property name, and a map for the item
+                // type already exists), so EF cascades a second insert of every
+                // line item on top of the explicit one OrdersService.AfterInsert
+                // already does - doubling every OrderItems row on every order.
+                .ForMember(dest => dest.OrderItems, opt => opt.Ignore());
             CreateMap<Model.Requests.OrdersUpdateRequest, Database.Orders>()
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
             CreateMap<Database.Payment, Model.Payment>();
             CreateMap<Model.Requests.PaymentInsertRequest, Database.Payment>()
-                .ForMember(dest => dest.PaymentDate, opt => opt.MapFrom(src => DateTime.Now))
+                .ForMember(dest => dest.PaymentDate, opt => opt.MapFrom(src => DateTime.UtcNow))
                 .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src => "Pending"));
             CreateMap<Model.Requests.PaymentUpdateRequest, Database.Payment>()
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
