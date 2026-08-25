@@ -2,20 +2,18 @@
 
 - Pristupni podaci za desktop aplikaciju
 
-Employee:
+Employee/admin:
 
-Username: emina  
+Username: amila  
 Password: password123
 
 - Pristupni podaci za mobilnu aplikaciju
 
-Employee:
-
+User:
 Username: emina  
 Password: password123
 
-Customer/User:
-
+Employee:
 Username: amila  
 Password: password123
 
