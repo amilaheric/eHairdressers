@@ -27,7 +27,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
     try {
 
       var response = await http!.get(
-        Uri.parse('http://10.0.2.2:7051/ChatRoom'),
+        Uri.parse('${baseUrl}ChatRoom'),
         headers: createHeaders(),
       );
       
@@ -113,7 +113,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
       
   
       var response = await http!.get(
-        Uri.parse('http://10.0.2.2:7051/ChatRoom'),
+        Uri.parse('${baseUrl}ChatRoom'),
         headers: createHeaders(),
       );
       
@@ -217,7 +217,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
   Future<List<Message>> getChatMessages(int chatRoomId) async {
     try {
       var response = await http!.get(
-        Uri.parse('http://10.0.2.2:7051/Message/$chatRoomId'),
+        Uri.parse('${baseUrl}Message/$chatRoomId'),
         headers: createHeaders(),
       );
       
@@ -282,7 +282,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
       };
       
       var response = await http!.post(
-        Uri.parse('http://10.0.2.2:7051/Message'),
+        Uri.parse('${baseUrl}Message'),
         headers: createHeaders(),
         body: json.encode(requestBody),
       );
@@ -316,7 +316,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
 
       
       var response = await http!.post(
-        Uri.parse('http://10.0.2.2:7051/ChatRoom'),
+        Uri.parse('${baseUrl}ChatRoom'),
         headers: createHeaders(),
         body: json.encode(requestBody),
       );
@@ -393,10 +393,10 @@ class ChatProvider extends BaseProvider<ChatRoom> {
       print('Request body: $requestBody');
       
       var endpoints = [
-        'http://10.0.2.2:7051/ChatRoomUsers',
-        'http://10.0.2.2:7051/ChatRoom/Users',
-        'http://10.0.2.2:7051/ChatRoom/$chatRoomId/Users',
-        'http://10.0.2.2:7051/Users/ChatRoom',
+        '${baseUrl}ChatRoomUsers',
+        '${baseUrl}ChatRoom/Users',
+        '${baseUrl}ChatRoom/$chatRoomId/Users',
+        '${baseUrl}Users/ChatRoom',
       ];
       
       for (var endpoint in endpoints) {
@@ -431,7 +431,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
   Future<bool> markMessagesAsRead(int chatRoomId, int userId) async {
     try {
       var response = await http!.put(
-        Uri.parse('http://10.0.2.2:7051/Message/Read/$chatRoomId/$userId'),
+        Uri.parse('${baseUrl}Message/Read/$chatRoomId/$userId'),
         headers: createHeaders(),
       );
       
@@ -449,7 +449,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
   Future<int> getUnreadMessageCount(int userId) async {
     try {
       var response = await http!.get(
-        Uri.parse('http://10.0.2.2:7051/Message/UnreadCount/$userId'),
+        Uri.parse('${baseUrl}Message/UnreadCount/$userId'),
         headers: createHeaders(),
       );
       

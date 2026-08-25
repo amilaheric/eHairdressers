@@ -4,7 +4,7 @@ services:
     container_name: ehairdressers_sql
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=Password123!
+      - SA_PASSWORD=${DB_SA_PASSWORD}
       - MSSQL_PID=Developer
     ports:
       - "1433:1433"
@@ -19,8 +19,8 @@ services:
     image: rabbitmq:3-management
     container_name: ehairdressers_rabbitmq
     environment:
-      - RABBITMQ_DEFAULT_USER=admin
-      - RABBITMQ_DEFAULT_PASS=admin123
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD}
     ports:
       - "5672:5672"      
       - "15672:15672"   
@@ -40,13 +40,13 @@ services:
     environment:
       - ASPNETCORE_URLS=http://+:7051
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Data Source=sqlserver;Initial Catalog=IB160064;User ID=sa;Password=Password123!;TrustServerCertificate=True
+      - ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
       - Stripe__PublishableKey=${STRIPE_PUBLISHABLE_KEY}
-      - RabbitMQ__Host=rabbitmq
-      - RabbitMQ__Port=5672
-      - RabbitMQ__VirtualHost=/
-      - RabbitMQ__Username=admin
-      - RabbitMQ__Password=admin123
+      - RabbitMQ__Host=${RABBITMQ_HOST:-rabbitmq}
+      - RabbitMQ__Port=${RABBITMQ_PORT:-5672}
+      - RabbitMQ__VirtualHost=${RABBITMQ_VHOST:-/}
+      - RabbitMQ__Username=${RABBITMQ_USER}
+      - RabbitMQ__Password=${RABBITMQ_PASSWORD}
       - Jwt__Key=${JWT_SECRET_KEY}
       - Jwt__Issuer=eHairdressers
       - Jwt__Audience=eHairdressersClient
@@ -69,11 +69,11 @@ services:
     container_name: ehairdressers_worker
     environment:
       - DOTNET_ENVIRONMENT=Development
-      - RabbitMQ__Host=rabbitmq
-      - RabbitMQ__Port=5672
-      - RabbitMQ__VirtualHost=/
-      - RabbitMQ__Username=admin
-      - RabbitMQ__Password=admin123
+      - RabbitMQ__Host=${RABBITMQ_HOST:-rabbitmq}
+      - RabbitMQ__Port=${RABBITMQ_PORT:-5672}
+      - RabbitMQ__VirtualHost=${RABBITMQ_VHOST:-/}
+      - RabbitMQ__Username=${RABBITMQ_USER}
+      - RabbitMQ__Password=${RABBITMQ_PASSWORD}
       - Smtp__Host=${SMTP_HOST:-}
       - Smtp__Port=${SMTP_PORT:-587}
       - Smtp__Username=${SMTP_USERNAME:-}

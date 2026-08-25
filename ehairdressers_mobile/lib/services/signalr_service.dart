@@ -19,14 +19,20 @@ class SignalRService {
   bool get isConnected => _isConnected;
   HubConnection? get hubConnection => _hubConnection;
 
+  String get _baseUrl {
+    const String baseUrl =
+        String.fromEnvironment("baseUrl", defaultValue: "http://10.0.2.2:7051/");
+    return baseUrl.endsWith("/") ? baseUrl : "$baseUrl/";
+  }
+
   Future<void> initializeConnection() async {
     try {
-      
-      
+
+
       _sentMessageIds.clear();
-      
+
       _hubConnection = HubConnectionBuilder()
-          .withUrl('http://10.0.2.2:7051/chatHub')
+          .withUrl('${_baseUrl}chatHub')
           .withAutomaticReconnect()
           .build();
 

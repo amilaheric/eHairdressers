@@ -24,7 +24,7 @@ class ReviewProvider extends BaseProvider<Review> {
       print('Comment: ${review.comment ?? "No comment"}');
       print('Review.toJson(): ${review.toJson()}');
       
-      var url = "http://10.0.2.2:7051/Review";
+      var url = "${baseUrl}Review";
       var uri = Uri.parse(url);
       Map<String, String> headers = createHeaders();
       var jsonRequest = jsonEncode(review.toJson());
@@ -116,10 +116,10 @@ class ReviewProvider extends BaseProvider<Review> {
       ];
       
       List<String> endpoints = [
-        "http://10.0.2.2:7051/Review",
-        "http://10.0.2.2:7051/Review/submit",
-        "http://10.0.2.2:7051/api/Review",
-        "http://10.0.2.2:7051/api/Review/submit",
+        "${baseUrl}Review",
+        "${baseUrl}Review/submit",
+        "${baseUrl}api/Review",
+        "${baseUrl}api/Review/submit",
       ];
       
       for (int i = 0; i < dataVariations.length; i++) {
@@ -229,7 +229,7 @@ class ReviewProvider extends BaseProvider<Review> {
   // Get reviews for a specific service
   Future<List<Review>> getServiceReviews(int serviceId) async {
     try {
-      var url = "http://10.0.2.2:7051/Review/service/$serviceId";
+      var url = "${baseUrl}Review/service/$serviceId";
       var uri = Uri.parse(url);
       
       Map<String, String> headers = createHeaders();
@@ -257,7 +257,7 @@ class ReviewProvider extends BaseProvider<Review> {
   // Get reviews for a specific employee
   Future<List<Review>> getEmployeeReviews(int employeeId) async {
     try {
-      var url = "http://10.0.2.2:7051/Review/employee/$employeeId";
+      var url = "${baseUrl}Review/employee/$employeeId";
       var uri = Uri.parse(url);
       
       Map<String, String> headers = createHeaders();
@@ -291,9 +291,9 @@ class ReviewProvider extends BaseProvider<Review> {
       
       // Try multiple endpoints for checking review status
       List<String> checkEndpoints = [
-        "http://10.0.2.2:7051/Review/check/$appointmentId/$userId",
-        "http://10.0.2.2:7051/Review/exists/$appointmentId/$userId",
-        "http://10.0.2.2:7051/api/Review/check/$appointmentId/$userId",
+        "${baseUrl}Review/check/$appointmentId/$userId",
+        "${baseUrl}Review/exists/$appointmentId/$userId",
+        "${baseUrl}api/Review/check/$appointmentId/$userId",
       ];
       
       for (String url in checkEndpoints) {
@@ -340,7 +340,7 @@ class ReviewProvider extends BaseProvider<Review> {
   // Get reviews for a specific user
   Future<List<Review>> getUserReviews(int userId) async {
     try {
-      var url = "http://10.0.2.2:7051/Review/user/$userId";
+      var url = "${baseUrl}Review/user/$userId";
       var uri = Uri.parse(url);
       
       Map<String, String> headers = createHeaders();
@@ -368,7 +368,7 @@ class ReviewProvider extends BaseProvider<Review> {
   // Get reviews for a specific appointment
   Future<List<Review>> getAppointmentReviews(int appointmentId) async {
     try {
-      var url = "http://10.0.2.2:7051/Review/appointment/$appointmentId";
+      var url = "${baseUrl}Review/appointment/$appointmentId";
       var uri = Uri.parse(url);
       
       Map<String, String> headers = createHeaders();

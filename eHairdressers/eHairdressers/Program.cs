@@ -155,10 +155,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     }
                     catch (Exception ex)
                     {
-                        // Fail open on infrastructure errors (e.g. a pending
-                        // migration) rather than turning every authenticated
-                        // request into a 500 - the token's signature/expiry
-                        // are still independently validated above.
                         var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
                         logger.LogError(ex, "Revoked-token check failed for jti {Jti}; allowing request through.", jti);
                     }
@@ -195,9 +191,6 @@ using (var scope = app.Services.CreateScope())
     {
         dataContext.Database.Migrate();
 
-        // Belt-and-suspenders: the AddRevokedTokens migration has not been
-        // reliably applying in every environment (EF migration discovery
-        // issue). Guarantee the table exists regardless, idempotently.
         await dataContext.Database.ExecuteSqlRawAsync(@"
             IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'RevokedTokens')
             BEGIN

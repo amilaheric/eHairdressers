@@ -325,6 +325,19 @@ class _AppointmentScreenState extends State<AppointmentScreen> {
                 inputType: InputType.date,
                 format: DateFormat('dd/MM/yyyy'),
                 enabled: true,
+                firstDate: DateTime.now(),
+                validator: (value) {
+                  if (value == null) {
+                    return 'Please select a date';
+                  }
+                  final today = DateTime.now();
+                  final selectedDay = DateTime(value.year, value.month, value.day);
+                  final todayDay = DateTime(today.year, today.month, today.day);
+                  if (selectedDay.isBefore(todayDay)) {
+                    return 'Date cannot be in the past';
+                  }
+                  return null;
+                },
               ),
             ],
           )),

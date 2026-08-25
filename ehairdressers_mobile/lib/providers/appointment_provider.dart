@@ -15,7 +15,7 @@ class AppointmentProvider extends BaseProvider<Appointment> {
       print('=== CANCELLING APPOINTMENT ===');
       print('Appointment ID: $appointmentId');
       
-      var url = "http://10.0.2.2:7051/Appointment/cancel/$appointmentId";
+      var url = "${baseUrl}Appointment/cancel/$appointmentId";
       print('URL: $url');
       
       var uri = Uri.parse(url);
@@ -60,7 +60,7 @@ class AppointmentProvider extends BaseProvider<Appointment> {
       print('=== GETTING USER APPOINTMENTS ===');
       print('User ID: $userId');
       
-      var url = "http://10.0.2.2:7051/Appointment/$userId";
+      var url = "${baseUrl}Appointment/$userId";
       print('URL: $url');
       
       var uri = Uri.parse(url);
@@ -138,7 +138,7 @@ class AppointmentProvider extends BaseProvider<Appointment> {
     if (filter != null && filter is Map && filter.containsKey('UserId')) {
       // Use path parameter format: /Appointment/{userId}
       var userId = filter['UserId'];
-      var url = "http://10.0.2.2:7051/Appointment/$userId";
+      var url = "${baseUrl}Appointment/$userId";
       print("Using path parameter URL: $url");
       
       // Make the HTTP request directly for path parameter
@@ -358,7 +358,7 @@ class AppointmentProvider extends BaseProvider<Appointment> {
     print('User ID: $userId');
     
     try {
-      var url = "http://10.0.2.2:7051/Review/available-appointments/$userId";
+      var url = "${baseUrl}Review/available-appointments/$userId";
       print("URL: $url");
       
       var uri = Uri.parse(url);

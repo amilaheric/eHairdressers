@@ -30,7 +30,7 @@ class PaymentProvider extends BaseProvider<models.PaymentMethod> {
   }) async {
     try {
       var customEndpoint = "Payment/create-stripe-intent";
-      var url = "http://10.0.2.2:7051/$customEndpoint";
+      var url = "${baseUrl}$customEndpoint";
       var uri = Uri.parse(url);
 
       Map<String, String> headers = createHeaders();
@@ -75,7 +75,7 @@ class PaymentProvider extends BaseProvider<models.PaymentMethod> {
   }) async {
     try {
       var customEndpoint = "Payment/confirm-stripe-payment";
-      var url = "http://10.0.2.2:7051/$customEndpoint";
+      var url = "${baseUrl}$customEndpoint";
       var uri = Uri.parse(url);
 
       Map<String, String> headers = createHeaders();
