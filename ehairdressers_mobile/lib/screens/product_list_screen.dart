@@ -144,6 +144,12 @@ class _ProductListScreenState extends State<ProductListScreen> {
                   IconButton(
                       onPressed: () {
                         _cartProvider?.addToCart(x);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${x.name} added to cart!'),
+                            backgroundColor: Colors.green[600],
+                          ),
+                        );
                       },
                       icon: Icon(Icons.shopping_cart)),
                 ]),
