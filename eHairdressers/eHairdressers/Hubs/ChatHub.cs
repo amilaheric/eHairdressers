@@ -109,7 +109,7 @@ namespace eHairdressers.Hubs
                         {
                             ChatRoomId = chatRoomIdInt,
                             UserId = userIdInt,
-                            JoinedDate = DateTime.Now,
+                            JoinedDate = DateTime.UtcNow,
                             IsActive = true
                         };
                         

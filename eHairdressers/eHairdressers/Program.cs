@@ -16,15 +16,13 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        options.JsonSerializerOptions.PropertyNamingPolicy = null; 
+        options.JsonSerializerOptions.PropertyNamingPolicy = null;
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         options.JsonSerializerOptions.MaxDepth = 32;
     });
-
 
 builder.Services.AddSignalR();
 
@@ -77,7 +75,6 @@ builder.Services.AddTransient<IOrderItemsService, OrderItemsService>();
 builder.Services.AddTransient<IPaymentService, PaymentService>();
 builder.Services.AddHttpContextAccessor();
 
-
 builder.Services.AddTransient<IReviewService, ReviewService>();
 builder.Services.AddTransient<IChatRoomService, ChatRoomService>();
 builder.Services.AddHostedService<eHairdressers.Services.ChatRoomCleanupService>();
@@ -88,7 +85,6 @@ builder.Services.AddTransient<ISalonOperationsReportService, SalonOperationsRepo
 builder.Services.AddTransient<IUserAccountService, UserAccountService>();
 builder.Services.AddTransient<IUserRoleService, UserRoleService>();
 builder.Services.AddTransient<IRecommendationService, RecommendationService>();
-
 
 var rabbitMqSection = builder.Configuration.GetSection("RabbitMQ");
 var rabbitMqHost = rabbitMqSection["Host"];
@@ -101,14 +97,10 @@ var rabbitMqConnectionString =
 
 builder.Services.AddEasyNetQ(rabbitMqConnectionString);
 
-
 builder.Services.AddTransient<IMessagingService, MessagingService>();
 builder.Services.AddTransient<IEmployeeService, EmployeeService>();
 
-
-
 builder.Services.AddAutoMapper(cfg => { }, typeof(IProductsService));
-
 
 var jwtSection = builder.Configuration.GetSection(JwtOptions.SectionName);
 builder.Services.Configure<JwtOptions>(jwtSection);
@@ -155,6 +147,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     }
                     catch (Exception ex)
                     {
+
                         var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
                         logger.LogError(ex, "Revoked-token check failed for jti {Jti}; allowing request through.", jti);
                     }

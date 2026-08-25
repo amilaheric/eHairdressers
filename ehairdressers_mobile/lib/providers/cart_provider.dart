@@ -18,7 +18,6 @@ class CartProvider with ChangeNotifier {
     http = IOClient(client);
   }
 
-  // Get base API URL
   String get baseApiUrl {
     const String baseUrl = String.fromEnvironment("baseUrl", defaultValue: "http://10.0.2.2:7051/");
     return baseUrl.endsWith("/") ? baseUrl : "$baseUrl/";
@@ -66,24 +65,19 @@ class CartProvider with ChangeNotifier {
   int get totalItemCount =>
       cart.items.fold(0, (sum, item) => sum + item.count);
 
-  // Proceed to payment using the correct Cart endpoint
   Future<Orders?> proceedToPayment() async {
     try {
       if (cart.items.isEmpty) {
         throw Exception("Cart is empty");
       }
 
-      // Since Cart/ProceedToPayment doesn't exist, create order directly
-      // but with proper user context handling
       var url = "${baseApiUrl}Orders";
       var uri = Uri.parse(url);
       Map<String, String> headers = createHeaders();
 
-      // Calculate totals
       double totalWithVAT = cart.items.fold(0.0, (sum, item) => sum + ((item.product.price ?? 0.0) * item.count));
-      double totalWithoutVAT = totalWithVAT * 0.8; // 20% VAT
+      double totalWithoutVAT = totalWithVAT * 0.8;
 
-      // Get current user info from authorization
       int userId = Authorization.currentUserId;
 
       var orderData = {
@@ -111,7 +105,6 @@ class CartProvider with ChangeNotifier {
         if (data != null) {
           var order = Orders.fromJson(data);
 
-          // If backend returned wrong data, fix it client-side
           if (order.userId != userId || order.totalWithVAT != totalWithVAT) {
             order.userId = userId;
             order.customerId = userId;
