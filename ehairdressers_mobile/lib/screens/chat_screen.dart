@@ -37,6 +37,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   StreamSubscription<Message>? _messageSubscription;
   StreamSubscription<String>? _connectionSubscription;
+  StreamSubscription<String>? _joinErrorSubscription;
 
   @override
   void initState() {
@@ -84,6 +85,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollController.dispose();
     _messageSubscription?.cancel();
     _connectionSubscription?.cancel();
+    _joinErrorSubscription?.cancel();
     if (_currentChatRoomId != null) {
       _signalRService.leaveChatRoom(_currentChatRoomId.toString());
     }
@@ -142,6 +144,19 @@ class _ChatScreenState extends State<ChatScreen> {
               content: Text('Connection failed. Messages will be sent via HTTP.'),
               backgroundColor: Colors.orange,
               duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      });
+
+      _joinErrorSubscription = _signalRService.joinErrorStream.listen((error) {
+        if (mounted) {
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(error),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 4),
             ),
           );
         }

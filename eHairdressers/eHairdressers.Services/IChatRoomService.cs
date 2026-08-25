@@ -9,5 +9,6 @@ namespace eHairdressers.Services
         Task<List<ChatRoom>> GetChatRoomsByUserId(int userId);
         Task<ChatRoom> GetChatRoomWithUsers(int chatRoomId);
         Task<int> DeactivateInactiveChatRooms(int retentionDays);
+        Task<(bool Allowed, string? Error)> CanUserJoinAsync(int chatRoomId, int userId);
     }
 }

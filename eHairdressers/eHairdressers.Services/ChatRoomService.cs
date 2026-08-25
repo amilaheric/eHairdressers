@@ -33,7 +33,7 @@ namespace eHairdressers.Services
 
         public async Task<int> DeactivateInactiveChatRooms(int retentionDays)
         {
-            var cutoffDate = DateTime.Now.AddDays(-retentionDays);
+            var cutoffDate = DateTime.UtcNow.AddDays(-retentionDays);
 
             var candidateRooms = await _context.ChatRooms
                 .Where(cr => cr.IsActive)
@@ -60,6 +60,48 @@ namespace eHairdressers.Services
             }
 
             return roomsToDeactivate.Count;
+        }
+
+        // A chat room's "customer" is whichever Customer-role user is first
+        // to join it. Any Admin/Employee can always join (that's the support
+        // side), but a second, different Customer-role user cannot join a
+        // room that already has one - each support chat belongs to exactly
+        // one customer.
+        public async Task<(bool Allowed, string? Error)> CanUserJoinAsync(int chatRoomId, int userId)
+        {
+            var isCustomer = await IsUserInRoleAsync(userId, "Customer");
+            if (!isCustomer)
+            {
+                return (true, null);
+            }
+
+            var activeMemberIds = await _context.ChatRoomUsers
+                .Where(cru => cru.ChatRoomId == chatRoomId && cru.IsActive && cru.UserId != userId)
+                .Select(cru => cru.UserId)
+                .ToListAsync();
+
+            if (activeMemberIds.Count == 0)
+            {
+                return (true, null);
+            }
+
+            var hasOtherCustomer = await _context.UserRole
+                .Include(ur => ur.Role)
+                .AnyAsync(ur => activeMemberIds.Contains(ur.UserId) && ur.Role.Name == "Customer");
+
+            if (hasOtherCustomer)
+            {
+                return (false, "This chat room already has a customer assigned. A customer cannot join another customer's support chat.");
+            }
+
+            return (true, null);
+        }
+
+        private async Task<bool> IsUserInRoleAsync(int userId, string roleName)
+        {
+            return await _context.UserRole
+                .Include(ur => ur.Role)
+                .AnyAsync(ur => ur.UserId == userId && ur.Role.Name == roleName);
         }
 
         public async Task<Model.ChatRoom> GetChatRoomWithUsers(int chatRoomId)
@@ -89,11 +131,23 @@ namespace eHairdressers.Services
                 throw new Exception("One or more users not found");
             }
 
-          
+            var customerCount = 0;
+            foreach (var userId in insert.UserIds)
+            {
+                if (await IsUserInRoleAsync(userId, "Customer"))
+                {
+                    customerCount++;
+                }
+            }
+            if (customerCount > 1)
+            {
+                throw new Exception("A chat room can only have one customer.");
+            }
+
             var chatRoom = new Database.ChatRoom
             {
                 Name = insert.Name,
-                CreatedDate = DateTime.Now,
+                CreatedDate = DateTime.UtcNow,
                 IsActive = true
             };
 
@@ -105,7 +159,7 @@ namespace eHairdressers.Services
             {
                 ChatRoomId = chatRoom.ChatRoomId,
                 UserId = userId,
-                JoinedDate = DateTime.Now,
+                JoinedDate = DateTime.UtcNow,
                 IsActive = true
             }).ToList();
 

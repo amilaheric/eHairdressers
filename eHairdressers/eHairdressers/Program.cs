@@ -180,9 +180,28 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var dataContext = scope.ServiceProvider.GetRequiredService<eHairdressersContext>();
+    var startupLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     try
     {
-        dataContext.Database.Migrate();
+        // SQL Server can still refuse connections for a few seconds even
+        // after docker-compose's healthcheck reports it as healthy (or when
+        // running locally against a SQL instance that's still starting up).
+        // Retry the migration a few times instead of giving up on the first
+        // transient failure and silently running with no database at all.
+        const int maxAttempts = 5;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                dataContext.Database.Migrate();
+                break;
+            }
+            catch (Exception ex) when (attempt < maxAttempts)
+            {
+                startupLogger.LogWarning(ex, "Database migration attempt {Attempt}/{MaxAttempts} failed, retrying in 5s...", attempt, maxAttempts);
+                await Task.Delay(TimeSpan.FromSeconds(5));
+            }
+        }
 
         await dataContext.Database.ExecuteSqlRawAsync(@"
             IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'RevokedTokens')

@@ -1,6 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:ehairdressers_mobile/providers/chat_provider.dart';
 import 'package:ehairdressers_mobile/screens/chat_list_screen.dart';
+import 'package:ehairdressers_mobile/services/signalr_service.dart';
 import 'package:ehairdressers_mobile/utils/chat_notification_helper.dart';
+import 'package:provider/provider.dart';
 
 class FloatingChatBubble extends StatefulWidget {
   final int userId;
@@ -20,6 +24,10 @@ class _FloatingChatBubbleState extends State<FloatingChatBubble>
   late Animation<double> _scaleAnimation;
   bool _isPressed = false;
 
+  final SignalRService _signalRService = SignalRService();
+  StreamSubscription<int>? _unreadCountSubscription;
+  int _unreadCount = 0;
+
   @override
   void initState() {
     super.initState();
@@ -34,11 +42,47 @@ class _FloatingChatBubbleState extends State<FloatingChatBubble>
       parent: _animationController,
       curve: Curves.easeInOut,
     ));
+    _loadUnreadCount();
+    _listenForUnreadUpdates();
+  }
+
+  Future<void> _loadUnreadCount() async {
+    try {
+      final count = await context
+          .read<ChatProvider>()
+          .getUnreadMessageCount(widget.userId);
+      if (mounted) {
+        setState(() {
+          _unreadCount = count;
+        });
+      }
+    } catch (_) {
+      // Leave the badge as-is if this fails - not worth surfacing an error
+      // for a background count refresh.
+    }
+  }
+
+  Future<void> _listenForUnreadUpdates() async {
+    if (!_signalRService.isConnected) {
+      try {
+        await _signalRService.initializeConnection();
+      } catch (_) {
+        return;
+      }
+    }
+    _unreadCountSubscription = _signalRService.unreadCountStream.listen((count) {
+      if (mounted) {
+        setState(() {
+          _unreadCount = count;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _unreadCountSubscription?.cancel();
     super.dispose();
   }
 
@@ -63,12 +107,13 @@ class _FloatingChatBubbleState extends State<FloatingChatBubble>
     _animationController.reverse();
   }
 
-  void _openChat() {
-    Navigator.of(context).push(
+  void _openChat() async {
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => ChatListScreen(userId: widget.userId),
       ),
     );
+    _loadUnreadCount();
   }
 
   void _showChatInfo() {
@@ -106,8 +151,8 @@ class _FloatingChatBubbleState extends State<FloatingChatBubble>
                   ],
                 ),
                 child: Stack(
+                  clipBehavior: Clip.none,
                   children: [
-                    
                     Center(
                       child: Icon(
                         Icons.chat,
@@ -115,29 +160,29 @@ class _FloatingChatBubbleState extends State<FloatingChatBubble>
                         size: 28,
                       ),
                     ),
-                      
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Container(
-                            width: 6,
-                            height: 6,
-                            decoration: BoxDecoration(
+                    if (_unreadCount > 0)
+                      Positioned(
+                        top: -4,
+                        right: -4,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          constraints: BoxConstraints(minWidth: 18, minHeight: 18),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(9),
+                            border: Border.all(color: Colors.white, width: 1.5),
+                          ),
+                          child: Text(
+                            _unreadCount > 99 ? '99+' : '$_unreadCount',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
                               color: Colors.white,
-                              shape: BoxShape.circle,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
                       ),
-                    ),
                   ],
                 ),
               ),

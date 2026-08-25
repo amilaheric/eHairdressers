@@ -86,25 +86,24 @@ namespace eHairdressers.Hubs
         {
             try
             {
-               
-                await Groups.AddToGroupAsync(Context.ConnectionId, chatRoomId);
-              
-                await Groups.AddToGroupAsync(Context.ConnectionId, $"ChatRoom_{chatRoomId}");
-                
-               
-                var userId = _userConnections.ContainsKey(Context.ConnectionId) 
-                    ? _userConnections[Context.ConnectionId] 
+                var userId = _userConnections.ContainsKey(Context.ConnectionId)
+                    ? _userConnections[Context.ConnectionId]
                     : Context.UserIdentifier ?? Context.ConnectionId;
-                
-             
+
                 if (int.TryParse(chatRoomId, out int chatRoomIdInt) && int.TryParse(userId, out int userIdInt))
                 {
-            
                     var existingMembership = await _context.ChatRoomUsers
                         .FirstOrDefaultAsync(m => m.ChatRoomId == chatRoomIdInt && m.UserId == userIdInt && m.IsActive);
-                    
+
                     if (existingMembership == null)
                     {
+                        var (allowed, error) = await _chatRoomService.CanUserJoinAsync(chatRoomIdInt, userIdInt);
+                        if (!allowed)
+                        {
+                            await Clients.Caller.SendAsync("JoinError", error);
+                            return;
+                        }
+
                         var membership = new ChatRoomUser
                         {
                             ChatRoomId = chatRoomIdInt,
@@ -112,27 +111,20 @@ namespace eHairdressers.Hubs
                             JoinedDate = DateTime.UtcNow,
                             IsActive = true
                         };
-                        
+
                         _context.ChatRoomUsers.Add(membership);
                         await _context.SaveChangesAsync();
-                        
-                       
-                    }
-                    else
-                    {
-                        Console.WriteLine($"=== USER {userId} ALREADY A MEMBER OF CHAT ROOM {chatRoomId} ===");
                     }
                 }
-                
-             
+
+                await Groups.AddToGroupAsync(Context.ConnectionId, chatRoomId);
+                await Groups.AddToGroupAsync(Context.ConnectionId, $"ChatRoom_{chatRoomId}");
+
                 await Clients.Group(chatRoomId).SendAsync("UserJoined", userId, chatRoomId);
-                
-            
                 await Clients.Caller.SendAsync("JoinedChatRoom", chatRoomId);
             }
             catch (Exception ex)
             {
-               
                 await Clients.Caller.SendAsync("JoinError", ex.Message);
             }
         }

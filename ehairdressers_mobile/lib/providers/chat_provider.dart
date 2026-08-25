@@ -312,6 +312,7 @@ class ChatProvider extends BaseProvider<ChatRoom> {
         'name': chatRoom.name ?? 'Customer Support Chat',
         'createddate': chatRoom.createdDate,
         'isactive': chatRoom.isActive,
+        'userIds': [chatRoom.userId ?? Authorization.currentUserId],
       };
 
       
@@ -343,10 +344,9 @@ class ChatProvider extends BaseProvider<ChatRoom> {
        
           
           if (newChatRoomId != null) {
-       
-            var userAdded = await addUserToChatRoom(newChatRoomId, chatRoom.userId ?? Authorization.currentUserId);
-          
-            
+            // Membership for the creator is now set up server-side via
+            // UserIds on the insert request, so no separate call is needed
+            // here.
             var createdRoom = ChatRoom(
               chatRoomId: newChatRoomId,
               name: jsonData['name'] ?? jsonData['Name'] ?? chatRoom.name,

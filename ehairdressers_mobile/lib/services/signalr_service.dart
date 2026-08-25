@@ -11,11 +11,17 @@ class SignalRService {
   bool _isConnected = false;
   final StreamController<Message> _messageController = StreamController<Message>.broadcast();
   final StreamController<String> _connectionStatusController = StreamController<String>.broadcast();
-  
+  final StreamController<int> _unreadCountController = StreamController<int>.broadcast();
+  final StreamController<String> _joinErrorController = StreamController<String>.broadcast();
+  final StreamController<void> _chatRoomCreatedController = StreamController<void>.broadcast();
+
   final Set<String> _sentMessageIds = <String>{};
 
   Stream<Message> get messageStream => _messageController.stream;
   Stream<String> get connectionStatusStream => _connectionStatusController.stream;
+  Stream<int> get unreadCountStream => _unreadCountController.stream;
+  Stream<String> get joinErrorStream => _joinErrorController.stream;
+  Stream<void> get chatRoomCreatedStream => _chatRoomCreatedController.stream;
   bool get isConnected => _isConnected;
   HubConnection? get hubConnection => _hubConnection;
 
@@ -124,6 +130,22 @@ class SignalRService {
 
     _hubConnection!.on('UserLeft', (arguments) {
       print('User left: $arguments');
+    });
+
+    _hubConnection!.on('UpdateUnreadCount', (arguments) {
+      if (arguments != null && arguments.isNotEmpty) {
+        _unreadCountController.add(_parseInt(arguments[0]));
+      }
+    });
+
+    _hubConnection!.on('JoinError', (arguments) {
+      if (arguments != null && arguments.isNotEmpty) {
+        _joinErrorController.add(arguments[0].toString());
+      }
+    });
+
+    _hubConnection!.on('ChatRoomCreated', (arguments) {
+      _chatRoomCreatedController.add(null);
     });
   }
 
@@ -262,5 +284,8 @@ class SignalRService {
     disconnect();
     _messageController.close();
     _connectionStatusController.close();
+    _unreadCountController.close();
+    _joinErrorController.close();
+    _chatRoomCreatedController.close();
   }
 }

@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:ehairdressers_mobile/models/chat.dart';
 import 'package:ehairdressers_mobile/providers/chat_provider.dart';
 import 'package:ehairdressers_mobile/screens/chat_screen.dart';
+import 'package:ehairdressers_mobile/services/signalr_service.dart';
 import 'package:ehairdressers_mobile/widgets/master_screen.dart';
 import 'package:ehairdressers_mobile/utils/chat_notification_helper.dart';
 import 'package:ehairdressers_mobile/utils/util.dart';
@@ -22,14 +24,41 @@ class ChatListScreen extends StatefulWidget {
 
 class _ChatListScreenState extends State<ChatListScreen> {
   late ChatProvider _chatProvider;
+  final SignalRService _signalRService = SignalRService();
   List<ChatRoom> _chatRooms = [];
   bool _isLoading = true;
   int _unreadCount = 0;
+  StreamSubscription<void>? _chatRoomCreatedSubscription;
+
+  // "Customer" side vs "Admin"/"Employee" side is enforced server-side
+  // (ChatRoomService.CanUserJoinAsync) where the real role data lives.
+  // Authorization.userRole on this client is a legacy "Employee"/"User"
+  // flag, not the actual role name, so it can't be trusted here - anyone
+  // can tap "create", and the backend rejects it if it would violate the
+  // one-customer-per-room rule.
+  bool get _canStartNewChat => true;
 
   @override
   void initState() {
     super.initState();
     // Don't load data here - wait for provider to be available
+    _listenForNewChatRooms();
+  }
+
+  Future<void> _listenForNewChatRooms() async {
+    if (!_signalRService.isConnected) {
+      try {
+        await _signalRService.initializeConnection();
+      } catch (_) {
+        // If this fails, the manual refresh button still works.
+      }
+    }
+    _chatRoomCreatedSubscription =
+        _signalRService.chatRoomCreatedStream.listen((_) {
+      if (mounted) {
+        _loadChatRooms();
+      }
+    });
   }
 
   @override
@@ -37,6 +66,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
     super.didChangeDependencies();
     _chatProvider = context.read<ChatProvider>();
     _loadChatRooms();
+  }
+
+  @override
+  void dispose() {
+    _chatRoomCreatedSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadChatRooms() async {
@@ -78,12 +113,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   void _navigateToChat(ChatRoom chatRoom) async {
     try {
-      // Add current user to the chat room if they're not already there
-      if (chatRoom.chatRoomId != null) {
-        print('🔄 Adding user to chat room: ${chatRoom.chatRoomId}');
-        await _chatProvider.addUserToChatRoom(chatRoom.chatRoomId!, Authorization.currentUserId);
-      }
-      
+      // Membership + role eligibility (customer vs support) is checked
+      // server-side when ChatScreen joins the SignalR group for this room.
       final result = await Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => ChatScreen(
@@ -311,16 +342,17 @@ class _ChatListScreenState extends State<ChatListScreen> {
             ),
           ),
           SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: _startNewChat,
-            icon: Icon(Icons.add),
-            label: Text('Create New Chat Room'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          if (_canStartNewChat)
+            ElevatedButton.icon(
+              onPressed: _startNewChat,
+              icon: Icon(Icons.add),
+              label: Text('Create New Chat Room'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -341,11 +373,12 @@ class _ChatListScreenState extends State<ChatListScreen> {
           },
           tooltip: 'Refresh chat rooms',
         ),
-        IconButton(
-          icon: Icon(Icons.add),
-          onPressed: _startNewChat,
-          tooltip: 'Create new chat room',
-        ),
+        if (_canStartNewChat)
+          IconButton(
+            icon: Icon(Icons.add),
+            onPressed: _startNewChat,
+            tooltip: 'Create new chat room',
+          ),
         IconButton(
           icon: Icon(Icons.info_outline),
           onPressed: () {
