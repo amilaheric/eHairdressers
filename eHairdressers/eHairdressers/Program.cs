@@ -203,7 +203,7 @@ using (var scope = app.Services.CreateScope())
             BEGIN
                 CREATE TABLE [RevokedTokens] (
                     [RevokedTokenId] int NOT NULL IDENTITY(1,1),
-                    [Jti] nvarchar(max) NOT NULL,
+                    [Jti] nvarchar(450) NOT NULL,
                     [ExpiresAtUtc] datetime2 NOT NULL,
                     [RevokedAtUtc] datetime2 NOT NULL,
                     CONSTRAINT [PK_RevokedTokens] PRIMARY KEY ([RevokedTokenId])
