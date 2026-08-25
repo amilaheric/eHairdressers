@@ -63,6 +63,9 @@ class CartProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  int get totalItemCount =>
+      cart.items.fold(0, (sum, item) => sum + item.count);
+
   // Proceed to payment using the correct Cart endpoint
   Future<Orders?> proceedToPayment() async {
     try {
