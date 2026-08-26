@@ -23,12 +23,6 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNamingPolicy = null;
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         options.JsonSerializerOptions.MaxDepth = 32;
-        // All DateTime values in this app are written using DateTime.UtcNow,
-        // but EF Core always reads datetime2 columns back with Kind=Unspecified,
-        // which System.Text.Json would otherwise serialize with no timezone
-        // marker at all - clients then parse it as if it were their own local
-        // time, showing the wrong hour. Force every DateTime on the wire to be
-        // treated/serialized as UTC ("...Z") so clients can safely .toLocal() it.
         options.JsonSerializerOptions.Converters.Add(new UtcDateTimeConverter());
         options.JsonSerializerOptions.Converters.Add(new UtcNullableDateTimeConverter());
     });
@@ -192,11 +186,6 @@ using (var scope = app.Services.CreateScope())
     var startupLogger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     try
     {
-        // SQL Server can still refuse connections for a few seconds even
-        // after docker-compose's healthcheck reports it as healthy (or when
-        // running locally against a SQL instance that's still starting up).
-        // Retry the migration a few times instead of giving up on the first
-        // transient failure and silently running with no database at all.
         const int maxAttempts = 5;
         for (int attempt = 1; attempt <= maxAttempts; attempt++)
         {

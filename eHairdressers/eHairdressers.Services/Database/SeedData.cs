@@ -165,7 +165,15 @@ namespace eHairdressers.Services.Database
 
             var categories = new List<Category>
             {
-                new Category { Name = "kerastase", Description = "Premium hair care products" }
+                new Category { Name = "kerastase", Description = "Premium hair care products" },
+                new Category { Name = "shampoo", Description = "Premium hair care products" },
+                new Category { Name = "hair oil", Description = "Premium hair care products" },
+                new Category { Name = "hair serum", Description = "Premium hair care products" },
+                new Category { Name = "cleansing conditioner", Description = "Premium hair care products" }
+
+
+
+
             };
 
             context.Category.AddRange(categories);
@@ -179,7 +187,9 @@ namespace eHairdressers.Services.Database
 
             var brands = new List<Brand>
             {
-                new Brand { Name = "kerastase" }
+                new Brand { Name = "kerastase" },
+                new Brand { Name = "schwarzkopf" }
+
             };
 
             context.Brand.AddRange(brands);
@@ -193,7 +203,7 @@ namespace eHairdressers.Services.Database
 
             var services = new List<Service>
             {
-                new Service { ServiceName = "sisanje", Description = "sisanje", Duration = "1 hour" }
+                new Service { ServiceName = "haircut", Description = "haircut", Duration = "1 hour" }
             };
 
             context.Services.AddRange(services);
@@ -207,7 +217,7 @@ namespace eHairdressers.Services.Database
 
             var userData = new[]
             {
-                new { Name = "amila", Surname = "heric", Username = "amila", Email = "amila@to.com", CitizenshipNumber = "123456789", Phone = "+1234567890", BirthDate = "1990-01-01" },
+                new { Name = "amila", Surname = "heric", Username = "amila", Email = "amila.heric@outlook.com", CitizenshipNumber = "123456789", Phone = "+1234567890", BirthDate = "1990-01-01" },
                 new { Name = "emina", Surname = "heric", Username = "emina", Email = "emina@to.com", CitizenshipNumber = "987654321", Phone = "+0987654321", BirthDate = "1992-05-15" },
                 new { Name = "ermina", Surname = "music", Username = "ermina", Email = "ermina@hotmail.com", CitizenshipNumber = "456789123", Phone = "+4567891230", BirthDate = "1988-12-10" },
                 new { Name = "esma", Surname = "gudic", Username = "esma", Email = "esma@hotmail.com", CitizenshipNumber = "789123456", Phone = "+7891234560", BirthDate = "1995-03-20" },
@@ -377,11 +387,11 @@ namespace eHairdressers.Services.Database
 
             var products = new List<Products>
             {
-                new Products { Name = "serum", Description = "serum za vrhove", Code = "s33", Price = 100.0, CategoryId = category.Id, BrandId = brand.Id, Image = serumImageBytes },
-                new Products { Name = "sampon", Description = "sampon za suhu kosu", Code = "sh11", Price = 80.0, CategoryId = category.Id, BrandId = brand.Id, Image = samponImageBytes },
-                new Products { Name = "Ulje za kosu", Description = "ulje za suhu kosu", Code = "u1222", Price = 100.0, CategoryId = category.Id, BrandId = brand.Id, Image = uljeImageBytes },
-                new Products { Name = "regenerator", Description = "regenerator", Code = "r121", Price = 50.0, CategoryId = category.Id, BrandId = brand.Id, Image = regeneratorImageBytes },
-                new Products { Name = "kupka", Description = "kupka", Code = "k122", Price = 85.0, CategoryId = category.Id, BrandId = brand.Id, Image = kupkaImageBytes },
+                new Products { Name = "hair serum", Description = "serum", Code = "s33", Price = 100.0, CategoryId = category.Id, BrandId = brand.Id, Image = serumImageBytes },
+                new Products { Name = "shampoo", Description = "shampoo for dry hair", Code = "sh11", Price = 80.0, CategoryId = category.Id, BrandId = brand.Id, Image = samponImageBytes },
+                new Products { Name = "hair oil", Description = "oil for dry hair", Code = "u1222", Price = 100.0, CategoryId = category.Id, BrandId = brand.Id, Image = uljeImageBytes },
+                new Products { Name = "conditioner", Description = "conditioner", Code = "r121", Price = 50.0, CategoryId = category.Id, BrandId = brand.Id, Image = regeneratorImageBytes },
+                new Products { Name = "cleansing conditioner", Description = "cleansing conditioner", Code = "k122", Price = 85.0, CategoryId = category.Id, BrandId = brand.Id, Image = kupkaImageBytes },
             };
 
             context.Products.AddRange(products);
@@ -398,10 +408,6 @@ namespace eHairdressers.Services.Database
             var service = await context.Services.FirstAsync();
 
 
-            // Appointment dates are anchored to "today" (rather than a fixed
-            // calendar date) so that reports which default to a recent
-            // window (e.g. "last 30 days") always have seeded data to show,
-            // no matter when the database is first created.
             var today = DateTime.UtcNow.Date;
             var appointments = new List<Appointment>
             {
@@ -425,11 +431,6 @@ namespace eHairdressers.Services.Database
 
             if (!existingOrders.Any())
             {
-                
-                // Order dates are anchored to "now" (rather than a fixed
-                // calendar date) so that reports which default to a recent
-                // window (e.g. "last 30 days") always have seeded data to
-                // show, no matter when the database is first created.
                 var today = DateTime.UtcNow.Date;
                 var orders = new List<Orders>
                 {
